@@ -29,6 +29,10 @@ class ElementTest(unittest.TestCase):
         # Set the simulation time
         self.time = 0.0
 
+        # Set design vars numbers
+        self.gDVNums = np.array([0, 1, 2], dtype=np.intc)
+        self.tDVNum = 3
+
         # Set the variable arrays
         np.random.seed(30)  # Seed random numbers for deterministic/repeatable tests
         self.xpts = np.random.rand(3 * max_nodes).astype(self.dtype)
@@ -67,7 +71,7 @@ class ElementTest(unittest.TestCase):
         ]
 
         # Create stiffness
-        con = constitutive.SolidConstitutive(self.props, t=1.0, tNum=0)
+        con = constitutive.SolidConstitutive(self.props, t=1.0, tNum=self.tDVNum)
 
         # Set the model type
         self.models = [
@@ -98,7 +102,7 @@ class ElementTest(unittest.TestCase):
                                 % (type(model), type(basis))
                             )
                         element = elements.Element3D(model, basis)
-                        force = element.createElementInertialForce(self.g)
+                        force = element.createElementInertialForce(self.g, self.gDVNums)
                         fail = elements.TestElementJacobian(
                             force,
                             self.elem_index,
@@ -127,7 +131,7 @@ class ElementTest(unittest.TestCase):
                                 % (type(model), type(basis))
                             )
                         element = elements.Element3D(model, basis)
-                        force = element.createElementInertialForce(self.g)
+                        force = element.createElementInertialForce(self.g, self.gDVNums)
                         dvs = force.getDesignVars(self.elem_index)
                         fail = elements.TestAdjResProduct(
                             force,
@@ -157,7 +161,7 @@ class ElementTest(unittest.TestCase):
                                 % (type(model), type(basis))
                             )
                         element = elements.Element3D(model, basis)
-                        force = element.createElementInertialForce(self.g)
+                        force = element.createElementInertialForce(self.g, self.gDVNums)
                         fail = elements.TestAdjResXptProduct(
                             force,
                             self.elem_index,
@@ -180,7 +184,7 @@ class ElementTest(unittest.TestCase):
                 for basis in self.bases:
                     with self.subTest(basis=basis):
                         element = elements.Element3D(model, basis)
-                        force = element.createElementInertialForce(self.g)
+                        force = element.createElementInertialForce(self.g, self.gDVNums)
                         dvs = force.getDesignVars(self.elem_index)
                         for matrix_type in self.matrix_types:
                             with self.subTest(matrix_type=matrix_type):
@@ -211,7 +215,7 @@ class ElementTest(unittest.TestCase):
                 for basis in self.bases:
                     with self.subTest(basis=basis):
                         element = elements.Element3D(model, basis)
-                        force = element.createElementInertialForce(self.g)
+                        force = element.createElementInertialForce(self.g, self.gDVNums)
                         if self.print_level > 0:
                             print(
                                 "Testing with model %s with basis functions %s and matrix type GEOMETRIC_STIFFNESS\n"

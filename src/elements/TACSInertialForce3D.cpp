@@ -14,18 +14,26 @@
 
 #include "TACSInertialForce3D.h"
 
+#include <algorithm>
+
 #include "TACSElementAlgebra.h"
 
 TACSInertialForce3D::TACSInertialForce3D(int _varsPerNode,
                                          TACSConstitutive *_con,
                                          TACSElementBasis *_basis,
-                                         const TacsScalar _inertiaVec[]) {
+                                         const TacsScalar _inertiaVec[],
+                                         const int *_inertiaVecDVNums) {
   varsPerNode = _varsPerNode;
   con = _con;
   con->incref();
   basis = _basis;
   basis->incref();
-  memcpy(inertiaVec, _inertiaVec, 3 * sizeof(TacsScalar));
+  std::copy_n(_inertiaVec, 3, inertiaVec);
+  if (_inertiaVecDVNums) {
+    std::copy_n(_inertiaVecDVNums, 3, inertiaVecDVNums);
+  } else {
+    inertiaVecDVNums[0] = inertiaVecDVNums[1] = inertiaVecDVNums[2] = -1;
+  }
 }
 
 TACSInertialForce3D::~TACSInertialForce3D() {
@@ -75,22 +83,59 @@ double TACSInertialForce3D::getFaceQuadraturePoint(int face, int n, double pt[],
 
 int TACSInertialForce3D::getDesignVarNums(int elemIndex, int dvLen,
                                           int dvNums[]) {
-  return con->getDesignVarNums(elemIndex, dvLen, dvNums);
+  int num = con->getDesignVarNums(elemIndex, dvLen, dvNums);
+  for (int i = 0; i < 3; i++) {
+    if (inertiaVecDVNums[i] >= 0) {
+      if (dvNums && num < dvLen) {
+        dvNums[num] = inertiaVecDVNums[i];
+      }
+      num++;
+    }
+  }
+  return num;
 }
 
 int TACSInertialForce3D::setDesignVars(int elemIndex, int dvLen,
                                        const TacsScalar dvs[]) {
-  return con->setDesignVars(elemIndex, dvLen, dvs);
+  int num = con->setDesignVars(elemIndex, dvLen, dvs);
+  for (int i = 0; i < 3; i++) {
+    if (inertiaVecDVNums[i] >= 0) {
+      if (num < dvLen) {
+        inertiaVec[i] = dvs[num];
+      }
+      num++;
+    }
+  }
+  return num;
 }
 
 int TACSInertialForce3D::getDesignVars(int elemIndex, int dvLen,
                                        TacsScalar dvs[]) {
-  return con->getDesignVars(elemIndex, dvLen, dvs);
+  int num = con->getDesignVars(elemIndex, dvLen, dvs);
+  for (int i = 0; i < 3; i++) {
+    if (inertiaVecDVNums[i] >= 0) {
+      if (dvs && num < dvLen) {
+        dvs[num] = inertiaVec[i];
+      }
+      num++;
+    }
+  }
+  return num;
 }
 
 int TACSInertialForce3D::getDesignVarRange(int elemIndex, int dvLen,
                                            TacsScalar lb[], TacsScalar ub[]) {
-  return con->getDesignVarRange(elemIndex, dvLen, lb, ub);
+  int num = con->getDesignVarRange(elemIndex, dvLen, lb, ub);
+  for (int i = 0; i < 3; i++) {
+    if (inertiaVecDVNums[i] >= 0) {
+      if (num < dvLen) {
+        lb[num] = -TACS_LARGE_DV_BOUND;
+        ub[num] = TACS_LARGE_DV_BOUND;
+      }
+      num++;
+    }
+  }
+  return num;
 }
 
 /*

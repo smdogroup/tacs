@@ -18,6 +18,8 @@
 
 #include "TACSAuxElements.h"
 
+#include <vector>
+
 static int compare_elems(const void *a, const void *b) {
   const TACSAuxElem *ao = static_cast<const TACSAuxElem *>(a);
   const TACSAuxElem *bo = static_cast<const TACSAuxElem *>(b);
@@ -141,29 +143,69 @@ int TACSAuxElements::getAuxElements(TACSAuxElem **_elems) {
 }
 
 /*
-  Get the design variables from all auxiliary elements
+  Set the design variables in all auxiliary elements from a design vector
+
+  This is the only implementation of the auxiliary element design variable
+  update: TACSAssembler::setDesignVars uses it for the auxiliary elements that
+  are attached to the assembler. Problems that own several TACSAuxElements
+  objects (for instance one per time step of a transient problem) call it on
+  each object directly.
+
+  This call is collective, because it distributes the non-local design
+  variable values. Every rank must make it, even a rank with no auxiliary
+  elements.
+
+  Each design variable number in the design vector has a block of
+  dvs->getBlockSize() values (the designVarsPerNode of the assembler), and the
+  values of an element's design variables are passed to the element block by
+  block. The load elements (pressure, traction, inertial and centrifugal
+  forces) use one value per design variable. With more than one value per
+  design variable, a load element with a single design variable therefore
+  gets the first value of its block, and its sensitivity goes into the first
+  value. A load element with several design variables reads its values from
+  consecutive entries that do not line up with the blocks, so it is not
+  supported with more than one value per design variable.
+
+  input:
+  dvs:  the design variable vector
 */
-void TACSAuxElements::getDesignVars(int numDVs, TacsScalar dvs[]) {
-  for (int i = 0; i < num_elements; i++) {
-    aux[i].elem->getDesignVars(i, numDVs, dvs);
-  }
+void TACSAuxElements::setDesignVars(TACSBVec *dvs) {
+  dvs->beginDistributeValues();
+  dvs->endDistributeValues();
+  setDistributedDesignVars(dvs);
 }
 
 /*
-  Set the design variables from all auxiliary elements
-*/
-void TACSAuxElements::setDesignVars(int numDVs, const TacsScalar dvs[]) {
-  for (int i = 0; i < num_elements; i++) {
-    aux[i].elem->setDesignVars(i, numDVs, dvs);
-  }
-}
+  Set the design variables in all auxiliary elements from a design vector
+  whose non-local values have already been distributed
 
-/*
-  Get the range of design variable values from all auxiliary elements
+  This call is not collective.
+
+  input:
+  dvs:  the distributed design variable vector
 */
-void TACSAuxElements::getDesignVarRange(int numDVs, TacsScalar lb[],
-                                        TacsScalar ub[]) {
+void TACSAuxElements::setDistributedDesignVars(TACSBVec *dvs) {
+  const int valuesPerDV = dvs->getBlockSize();
+  std::vector<int> dvNums;
+  std::vector<TacsScalar> dvVals;
+
   for (int i = 0; i < num_elements; i++) {
-    aux[i].elem->getDesignVarRange(i, numDVs, lb, ub);
+    TACSElement *elem = aux[i].elem;
+    const int elemNum = aux[i].num;
+    const int numDVs = elem->getDesignVarNums(elemNum, 0, NULL);
+    if (numDVs > 0) {
+      dvNums.resize(numDVs);
+      dvVals.resize(valuesPerDV * numDVs);
+      elem->getDesignVarNums(elemNum, numDVs, dvNums.data());
+      const int fail = dvs->getValues(numDVs, dvNums.data(), dvVals.data());
+      if (fail != 0) {
+        fprintf(stderr,
+                "TACSAuxElements: aux element %d uses a design variable that "
+                "is not in the external design variable list of this rank\n",
+                elemNum);
+        continue;
+      }
+      elem->setDesignVars(elemNum, numDVs, dvVals.data());
+    }
   }
 }

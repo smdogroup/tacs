@@ -7,10 +7,12 @@ pyBase_problem
 # =============================================================================
 from functools import wraps
 import copy
+import warnings
 
 from baseclasses import StructProblem as BaseStructProblem
 
 import numpy as np
+import scipy as sp
 from mpi4py import MPI
 import pyNastran.bdf as pn
 
@@ -43,6 +45,8 @@ class StructProblem(BaseStructProblem):
         FEAAssembler,
         DVGeo=None,
         loadFile=None,
+        promotedGlobalDVs=None,
+        excludedDVs=None,
     ):
         """
         Initialize the StructProblem.
@@ -62,6 +66,34 @@ class StructProblem(BaseStructProblem):
         loadFile : str, optional
             Filename of the (static) external load file. Should be
             generated from pyAerostructure.
+
+        promotedGlobalDVs : list of str or None, optional
+            Names of global DVs (registered via ``pyTACS.addGlobalDV``) that
+            should be promoted to the problem level.  Each promoted DV is
+            exposed to the optimizer as a separate scalar variable keyed
+            ``"{dvName}_{problemName}"`` so that multiple StructProblems can
+            carry independent values (e.g. fuel mass, load factor) without
+            key collisions.  All remaining DVs — element-level sizing
+            variables and any non-promoted global DVs — are grouped together
+            under ``self.varName`` (``"struct"``), the shared structural DV
+            block.
+
+            Pass ``None`` or ``[]`` (default) to promote nothing.
+
+        excludedDVs : list of str or None, optional
+            Design variable groups of this problem that are not variables of
+            the optimization, e.g. because they are held fixed.  Each entry is
+            either the name of a promoted global DV (as given in
+            ``promotedGlobalDVs``) or the name of the structural DV group
+            (``"struct"``).  Excluded groups are not registered by
+            :meth:`addVariablesPyOpt`, are left out of the sensitivities
+            returned by :meth:`evalFunctionsSens` and
+            :meth:`evalConstraintsSens` and of the constraint Jacobians
+            declared by :meth:`addConstraintsPyOpt`, and are not returned by
+            :meth:`getVarNames`.  Their values can still be set through
+            :meth:`setDesignVars`.
+
+            Pass ``None`` or ``[]`` (default) to exclude nothing.
         """
 
         self.staticProblem = staticProblem
@@ -71,6 +103,70 @@ class StructProblem(BaseStructProblem):
         self.ptSetName = None
         self.loadFile = loadFile
         self.constraints = []
+        self.constraintsAddToPyOpt = []
+
+        # Keep a copy of the original varName (used when forwarding calls to the
+        # underlying StaticProblem).
+        self.varName = self.staticProblem.varName
+
+        # --- Split the flat TACS DV vector into promoted DVs and structural DVs ---
+        #
+        # globalDVs is a dict of {dvName: {"num": int, "isMassDV": bool, ...}}
+        # where "num" is the index of that DV in the flat TACS design vector.
+        #
+        # promotedDVDict collects every global DV that should be promoted to
+        # the problem level.  Keys are namespaced as "{dvName}_{problemName}"
+        # so that multiple StructProblems can coexist in the same optimisation
+        # without key collisions.  This covers both classic mass DVs
+        # (isMassDV=True) and auxiliary DVs such as load-factor variables
+        # wired to addInertialLoad via inertiaVecDVNums.
+        globalDVs = self.FEAAssembler.getGlobalDVs()
+
+        namesToPromote = list(promotedGlobalDVs) if promotedGlobalDVs else []
+        invalid = [n for n in namesToPromote if n not in globalDVs]
+        if invalid:
+            raise ValueError(
+                f"The following names in promotedGlobalDVs are not registered "
+                f"global DVs: {invalid}. Available global DVs: {list(globalDVs.keys())}"
+            )
+
+        self.promotedDVDict = {
+            f"{dvName}_{self.name}": globalDVs[dvName] for dvName in namesToPromote
+        }
+
+        # excludedDVs holds the optimizer-level keys of the DV groups that are
+        # not variables of the optimization.
+        namesToExclude = list(excludedDVs) if excludedDVs else []
+        invalid = [
+            n for n in namesToExclude if n not in namesToPromote and n != self.varName
+        ]
+        if invalid:
+            raise ValueError(
+                f"The following names in excludedDVs are neither promoted global "
+                f"DVs nor the structural DV group '{self.varName}': {invalid}. "
+                f"Promoted global DVs: {namesToPromote}"
+            )
+        self.excludedDVs = {
+            n if n == self.varName else f"{n}_{self.name}" for n in namesToExclude
+        }
+
+        # structDVList holds the flat-vector indices of every DV that is NOT
+        # promoted.  Use set-subtraction so the result is correct regardless
+        # of how many DVs are promoted or where they sit in the flat vector.
+        promoted_nums = set()
+        for info in self.promotedDVDict.values():
+            promoted_nums.update(int(num) for num in np.atleast_1d(info["num"]))
+        self.structDVList = [
+            i
+            for i in range(FEAAssembler.getTotalNumDesignVars())
+            if i not in promoted_nums
+        ]
+
+        # Override the StaticProblem's varName with an internal key that will
+        # never collide with any optimizer-visible key.  The flat sensitivity
+        # vector returned under this key is later remapped by
+        # convertDesignVecToDict into the correct promoted/struct split.
+        self.staticProblem.setVarName(f"_{self.varName}_flat")
         self.solveFailed = False
 
         if self.staticProblem.assembler != self.FEAAssembler.assembler:
@@ -332,17 +428,155 @@ class StructProblem(BaseStructProblem):
         """
         self._matVecSolve[:] = value
 
-    def getVarName(self):
+    def _convertDesignDictToVec(self, dvDict):
         """
-        Get name for the design variables in pyOpt. Only needed
+        Assemble the flat TACS design vector from the split optimizer dictionary.
+
+        The optimizer sees two groups of variables:
+
+        * One entry (scalar or array) per promoted global DV, keyed
+          ``"{dvName}_{problemName}"`` (e.g. ``"fuelMass_cruise"``).
+        * A single array of structural DVs, keyed ``self.varName``
+          (e.g. ``"struct"``).
+
+        This method writes each group back into the correct positions of the flat
+        TACS design vector so it can be forwarded to
+        :meth:`~tacs.problems.StaticProblem.setDesignVars`.
+
+        Parameters
+        ----------
+        dvDict : dict
+            Optimizer design variable dictionary.  May contain any subset of the
+            expected keys; missing keys leave the corresponding entries in the
+            returned vector unchanged.
+
+        Returns
+        -------
+        numpy.ndarray
+            Full flat TACS design variable vector with updated entries.
+        """
+        # Start from the current TACS DV values so that any keys absent from
+        # dvDict are left at their existing values rather than zeroed out.
+        xnew = self.staticProblem.getDesignVars()
+        if self.comm.rank == 0:
+            # Write each promoted DV into its reserved index (or indices).
+            for dvName in self.promotedDVDict:
+                if dvName in dvDict:
+                    xnew[self.promotedDVDict[dvName]["num"]] = dvDict[dvName]
+            # Write the structural DV block into the remaining indices.
+            if self.varName in dvDict:
+                xnew[self.structDVList] = dvDict[self.varName]
+        return xnew
+
+    def convertDesignVecToDict(self, dvVec):
+        """
+        Split the flat TACS design vector into the optimizer dictionary format.
+
+        This is the inverse of :meth:`_convertDesignDictToVec`.  The flat vector
+        is split into:
+
+        * One entry (scalar or array) per promoted global DV, keyed
+          ``"{dvName}_{problemName}"`` (e.g. ``"fuelMass_cruise"``).
+        * A single array of structural DVs, keyed ``self.varName``
+          (e.g. ``"struct"``).
+
+        Parameters
+        ----------
+        dvVec : tacs.TACS.Vec or numpy.ndarray
+            Full flat TACS design variable vector to split.
+
+        Returns
+        -------
+        dict
+            Design variable dictionary suitable for passing to pyoptsparse.
+            Broadcast to all MPI ranks.
+        """
+        if isinstance(dvVec, tacs.TACS.Vec):
+            dvVec = dvVec.getArray()
+
+        dvDict = {}
+        if self.comm.rank == 0:
+            # Extract each promoted DV from its reserved index (or indices).
+            for dvName in self.promotedDVDict:
+                dvDict[dvName] = dvVec[..., self.promotedDVDict[dvName]["num"]]
+            # Extract the structural DV block from the remaining indices.
+            dvDict[self.varName] = dvVec[..., self.structDVList]
+        return self.comm.bcast(dvDict, root=0)
+
+    def getStructDVName(self):
+        """
+        Get the name of the structural design variable group in pyOpt, i.e.
+        the key of the structural DVs in the setDesignVars() dict. Only needed
         if more than 1 pytacs object is used in an optimization
 
         Returns
         -------
-        varName : str
-            Name of the design variables used in setDesignVars() dict.
+        structDVName : str
+            Name of the structural design variable group.
         """
-        return self.staticProblem.getVarName()
+        return self.varName
+
+    def getVarName(self):
+        """
+        Get the name of the structural design variable group in pyOpt.
+
+        .. deprecated::
+            Use :meth:`getStructDVName` instead. This method will be removed
+            in a future release.
+
+        Returns
+        -------
+        varName : str
+            Name of the structural design variable group.
+        """
+        warnings.warn(
+            "StructProblem.getVarName is deprecated, use getStructDVName instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return self.getStructDVName()
+
+    def getPromotedDVNames(self):
+        """
+        Get the optimizer-level keys for all promoted global DVs.
+
+        Returns
+        -------
+        list of str
+            Keys of the form ``"{dvName}_{problemName}"`` for every DV that
+            was promoted to the problem level at construction time.
+        """
+        return list(self.promotedDVDict.keys())
+
+    def getVarNames(self):
+        """
+        Get the optimizer-level names of all design variable groups this
+        problem adds to an optimization, matching the ``getVarNames`` method of
+        the other MACH modules (e.g. pyGeo).
+
+        Returns
+        -------
+        list of str
+            The promoted global DV keys (``"{dvName}_{problemName}"``), followed
+            by the structural DV group name (``self.varName``) if any
+            structural DVs remain after promotion.  Groups listed in
+            ``excludedDVs`` at construction are left out.
+        """
+        varNames = self.getPromotedDVNames()
+        if len(self.structDVList) > 0:
+            varNames.append(self.varName)
+        return [name for name in varNames if name not in self.excludedDVs]
+
+    @staticmethod
+    def _convertDictToFloat(dvDict):
+        """
+        Convert every entry of a design variable dictionary to a real
+        float64 array (0d for scalar DVs), preserving its shape.
+        """
+        return {
+            dvKey: np.asarray(np.real(dvVal), dtype=np.float64)
+            for dvKey, dvVal in dvDict.items()
+        }
 
     def setDVGeo(self, DVGeo, pointSetKwargs=None):
         """
@@ -400,14 +634,13 @@ class StructProblem(BaseStructProblem):
             Dictionary of variables which may or may not contain the
             design variable names this object needs
         """
-        if self.comm.rank != 0:
-            x = np.empty(0)
+        x = self._convertDesignDictToVec(x)
         self.staticProblem.setDesignVars(x)
 
         for constr in self.constraints:
             constr.setDesignVars(x)
 
-    def addConstraint(self, constr):
+    def addConstraint(self, constr, addToPyOpt=True):
         """
         Add pyTACS constraint object to StructProblem.
 
@@ -415,6 +648,10 @@ class StructProblem(BaseStructProblem):
         ----------
         constr : tacs.constraints.TACSConstraint
             pyTACS Constraint object
+
+        addToPyOpt : bool
+            Flag for whether to include constraint in pyOpt when calling `addConstraintsPyOpt`.
+            Defaults to `True`.
         """
         if self.staticProblem.assembler != constr.assembler:
             raise ValueError(
@@ -422,34 +659,80 @@ class StructProblem(BaseStructProblem):
                 "were not created by same pyTACS assembler"
             )
 
+        constr.setVarName(self.staticProblem.varName)
+
         self.constraints.append(constr)
+        self.constraintsAddToPyOpt.append(addToPyOpt)
 
     def addVariablesPyOpt(self, optProb):
         """
-        Add the current set of variables to the optProb object.
+        Register structural and mass design variables with a pyoptsparse problem.
+
+        The flat TACS design vector is split into two groups (see class docstring):
+
+        * **Promoted DVs** — each registered as its own variable group named
+          ``"{dvName}_{problemName}"``.
+        * **Structural DVs** — registered as a single vector variable group named
+          ``self.varName`` (``"struct"``).  Skipped if the group already
+          exists in ``optProb`` (prevents duplicate registration when multiple
+          StructProblems share the same assembler).
+
+        Groups listed in ``excludedDVs`` when the StructProblem was created are
+        skipped.
 
         Parameters
         ----------
-        optProb : pyOpt_optimization class
-            Optimization problem definition to which variables are added
+        optProb : pyoptsparse.Optimization
+            Optimization problem to which variables are added.
         """
-        ndv = self.FEAAssembler.getTotalNumDesignVars()
-        dvName = self.staticProblem.getVarName()
-        if ndv > 0 and dvName not in optProb.variables:
-            value = self.getOrigDesignVars()
-            lb, ub = self.getDesignVarRange()
-            scale = self.getDesignVarScales()
+        # Convert the flat TACS arrays into the split dict format so each group
+        # can be passed to addVarGroup with the correct bounds and scales.
+        valueDict = self.getOrigDesignVars()
+        lbDict, ubDict = self.getDesignVarRange()
+        scaleDict = self.getDesignVarScales()
 
+        # Register each promoted DV as its own variable group so it can
+        # be identified and shared with other disciplines in a coupled optimisation.
+        for dvName in self.promotedDVDict:
+            if dvName not in self.excludedDVs:
+                optProb.addVarGroup(
+                    dvName,
+                    np.atleast_1d(valueDict[dvName]).size,
+                    "c",
+                    value=valueDict[dvName],
+                    lower=lbDict[dvName],
+                    upper=ubDict[dvName],
+                    scale=scaleDict[dvName],
+                )
+
+        # Register the structural DV block only if it is non-empty, not excluded,
+        # and has not already been added (e.g. by a second StructProblem using the
+        # same assembler).
+        ndv = len(valueDict[self.varName])
+        if (
+            ndv > 0
+            and self.varName not in self.excludedDVs
+            and self.varName not in optProb.variables
+        ):
             optProb.addVarGroup(
-                dvName, ndv, "c", value=value, lower=lb, upper=ub, scale=scale
+                self.varName,
+                ndv,
+                "c",
+                value=valueDict[self.varName],
+                lower=lbDict[self.varName],
+                upper=ubDict[self.varName],
+                scale=scaleDict[self.varName],
             )
 
     def addConstraintsPyOpt(
         self, optProb, nonLinear=True, linear=True, excludeWRT=None
     ):
         """
-        Add any linear constraints that were generated during setup to
-        the specified pyOpt problem.
+        Register structural constraints with a pyoptsparse problem.
+
+        Evaluates all attached constraints and their sensitivities once to
+        determine the sparsity pattern, then calls ``optProb.addConGroup`` for
+        each constraint that was added with ``addToPyOpt=True``.
 
         Parameters
         ----------
@@ -471,18 +754,22 @@ class StructProblem(BaseStructProblem):
         conSizes = {}
         conBounds = {}
         conIsLinear = {}
+        conAddToPyOpt = {}
         self.evalConstraints(fcon, nonLinear=nonLinear, linear=linear)
         self.evalConstraintsSens(fconSens, nonLinear=nonLinear, linear=linear)
-        for constr in self.constraints:
+        for constr, addToPyOpt in zip(
+            self.constraints, self.constraintsAddToPyOpt, strict=True
+        ):
             constr.getConstraintSizes(conSizes)
             constr.getConstraintBounds(conBounds)
             keys = constr.getConstraintKeys()
             for key in keys:
                 conIsLinear[f"{constr.name}_{key}"] = constr.isLinear
+                conAddToPyOpt[f"{constr.name}_{key}"] = addToPyOpt
 
         for conName in fcon:
             nCon = conSizes[conName]
-            if nCon > 0:
+            if conAddToPyOpt[conName] and nCon > 0:
                 # Save the nonlinear constraint name
                 lb, ub = conBounds[conName]
 
@@ -498,6 +785,16 @@ class StructProblem(BaseStructProblem):
                         if name in wrt:
                             wrt.remove(name)
                             fconSens[conName].pop(name)
+
+                # A promoted DV that the constraint does not depend on would
+                # only add an empty Jacobian block. The excluded DVs are
+                # already left out by evalConstraintsSens
+                for name in list(wrt):
+                    if name in self.promotedDVDict and self._isZeroJacBlock(
+                        fconSens[conName][name], conIsLinear[conName]
+                    ):
+                        wrt.remove(name)
+                        fconSens[conName].pop(name)
 
                 optProb.addConGroup(
                     conName,
@@ -645,6 +942,34 @@ class StructProblem(BaseStructProblem):
                 if (linear and constr.isLinear) or (nonLinear and not constr.isLinear):
                     constr.evalConstraints(fcon, evalCons, ignoreMissing)
 
+    def _removeExcludedDVs(self, sensDict):
+        """
+        Remove the excluded DV groups from a dictionary of sensitivities.
+
+        The excluded groups are not variables of the optimization, and
+        pyoptsparse raises an error if the gradient of an objective has an
+        entry for a variable group it does not know.
+        """
+        return {
+            dvKey: dvSens
+            for dvKey, dvSens in sensDict.items()
+            if dvKey not in self.excludedDVs
+        }
+
+    @staticmethod
+    def _isZeroJacBlock(jacBlock, isLinear):
+        """
+        Check whether a constraint Jacobian block can never be nonzero.
+
+        A sparse block fixes the sparsity pattern pyoptsparse uses for the rest
+        of the optimization, so a sparse block with no nonzeros stays empty. A
+        dense block is only known to stay zero if the constraint is linear;
+        for a nonlinear constraint it may just be zero at the initial design.
+        """
+        if sp.sparse.issparse(jacBlock):
+            return jacBlock.count_nonzero() == 0
+        return isLinear and not np.any(jacBlock)
+
     @updateDVGeo
     def evalFunctionsSens(self, funcsSens, evalFuncs=None):
         """
@@ -683,6 +1008,15 @@ class StructProblem(BaseStructProblem):
                         dIdpt, self.ptSetName, comm=self.comm, config=self.name
                     )
                     funcsSens[funcKey].update(dIdx)
+
+        # Remap the flat sensitivity vector into the promoted/struct split.
+        oldVarName = self.staticProblem.varName
+        for funcName in evalFuncs:
+            funcKey = f"{self.name}_{funcName}"
+            if oldVarName in funcsSens[funcKey]:
+                sens = funcsSens[funcKey].pop(oldVarName)
+                newSens = self.convertDesignVecToDict(sens)
+                funcsSens[funcKey].update(self._removeExcludedDVs(newSens))
 
     @updateDVGeo
     def evalConstraintsSens(
@@ -731,6 +1065,8 @@ class StructProblem(BaseStructProblem):
                     # Pop out the constraint sensitivities wrt TACS coords
                     dIdpt = sens[conKey].pop(coordName)
                     # Check if the constraint sensitivities wrt TACS coords are zero on all procs
+                    if isinstance(dIdpt, np.ndarray):
+                        dIdpt = sp.sparse.csr_matrix(dIdpt)
                     total_nnz = self.comm.allreduce(dIdpt.nnz, op=MPI.SUM)
                     if total_nnz == 0:
                         # if so, skip DVGeo sensitivities
@@ -743,6 +1079,13 @@ class StructProblem(BaseStructProblem):
                             dIdpt, self.ptSetName, comm=self.comm, config=self.name
                         )
                     )
+
+        oldVarName = self.staticProblem.varName
+        for conKey in sens:
+            if oldVarName in sens[conKey]:
+                oldSens = sens[conKey].pop(oldVarName)
+                newSens = self.convertDesignVecToDict(oldSens)
+                sens[conKey].update(self._removeExcludedDVs(newSens))
 
         fconSens.update(sens)
 
@@ -787,13 +1130,13 @@ class StructProblem(BaseStructProblem):
 
         Returns
         -------
-        numpy.ndarray
-            Array containing all design variable values across all processors.
+        dict[numpy.ndarray]
+            dict containing all design variable values across all processors.
         """
-        local_dvs = self.FEAAssembler.getOrigDesignVars()
-        all_local_dvs = self.comm.allgather(local_dvs)
-        global_dvs = np.concatenate(all_local_dvs)
-        return global_dvs.astype(float)
+        localDVs = self.FEAAssembler.getOrigDesignVars()
+        dvDict = self.convertDesignVecToDict(localDVs)
+        dvDict = self._convertDictToFloat(dvDict)
+        return dvDict
 
     def getDesignVarRange(self):
         """
@@ -802,15 +1145,15 @@ class StructProblem(BaseStructProblem):
 
         Returns
         -------
-        tuple of numpy.ndarray
+        tuple of dict[numpy.ndarray]
             Lower and upper bounds for the design variables.
         """
-        local_lb, local_ub = self.FEAAssembler.getDesignVarRange()
-        all_lb = self.comm.allgather(local_lb)
-        global_lbs = np.concatenate(all_lb)
-        all_ub = self.comm.allgather(local_ub)
-        global_ubs = np.concatenate(all_ub)
-        return global_lbs.astype(float), global_ubs.astype(float)
+        localLB, localUB = self.FEAAssembler.getDesignVarRange()
+        lbDict = self.convertDesignVecToDict(localLB)
+        ubDict = self.convertDesignVecToDict(localUB)
+        lbDict = self._convertDictToFloat(lbDict)
+        ubDict = self._convertDictToFloat(ubDict)
+        return lbDict, ubDict
 
     def getDesignVarScales(self):
         """
@@ -823,7 +1166,9 @@ class StructProblem(BaseStructProblem):
         numpy.ndarray
             Scaling values for design variables.
         """
-        return np.array(self.FEAAssembler.scaleList)
+        scaleDict = self.convertDesignVecToDict(np.array(self.FEAAssembler.scaleList))
+        scaleDict = self._convertDictToFloat(scaleDict)
+        return scaleDict
 
     def getNumDesignVars(self):
         """
@@ -1116,7 +1461,7 @@ class StructProblem(BaseStructProblem):
 
         Returns
         -------
-        tacs.TACS.Vec
+        numpy.ndarray
             Derivative vector with respect to structural design variables.
         """
         dIdXdv = self.FEAAssembler.createDesignVec()
@@ -1148,7 +1493,6 @@ class StructProblem(BaseStructProblem):
         numpy.ndarray
             Transpose matrix-vector product result.
         """
-        # The old way (for testing purposes)
         self._matVecRHS.zeroEntries()
         svList = [self.FEAAssembler.createVec() for f in evalFuncs]
         self.staticProblem.addSVSens(evalFuncs, svList)
@@ -1180,7 +1524,6 @@ class StructProblem(BaseStructProblem):
         dict
             Dictionary containing transpose matrix-vector product results.
         """
-        # # The old way (for testing purposes)
         prodDV = self.FEAAssembler.createDesignVec(asBVec=True)
         for f in evalFuncs:
             f_mangled = self.name + "_%s" % f
@@ -1410,28 +1753,6 @@ class StructProblem(BaseStructProblem):
             prodDict.update(xdot)
 
         return prodDict
-
-    def convertDesignVecToDict(self, dvVec):
-        """
-        Convert a design vector to a dictionary format.
-
-        Parameters
-        ----------
-        dvVec : tacs.TACS.Vec or numpy.ndarray
-            Design vector to convert.
-
-        Returns
-        -------
-        dict
-            Dictionary containing the design vector with variable name as key.
-        """
-        if isinstance(dvVec, tacs.TACS.Vec):
-            dvVec = dvVec.getArray()
-
-        dvVals = self.comm.bcast(dvVec, root=0)
-        dvDict = {self.staticProblem.getVarName(): dvVals}
-
-        return dvDict
 
     def writeSolution(self, outputDir=None, baseName=None, number=None):
         """

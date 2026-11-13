@@ -41,6 +41,7 @@ class ElementTest(unittest.TestCase):
         np.random.seed(30)  # Seed random numbers for deterministic/repeatable tests
         self.press = 10.0
         self.faceIndex = 0
+        self.pressureDVNum = np.intc(1)
 
         # Create the isotropic material
         rho = 2700.0
@@ -95,7 +96,7 @@ class ElementTest(unittest.TestCase):
                     with self.subTest(element=element_handle):
                         element = element_handle(transform, self.con)
                         pressure = element.createElementPressure(
-                            self.faceIndex, self.press
+                            self.faceIndex, self.press, self.pressureDVNum
                         )
                         fail = elements.TestElementJacobian(
                             pressure,
@@ -121,9 +122,9 @@ class ElementTest(unittest.TestCase):
                     with self.subTest(element=element_handle):
                         element = element_handle(transform, self.con)
                         pressure = element.createElementPressure(
-                            self.faceIndex, self.press
+                            self.faceIndex, self.press, self.pressureDVNum
                         )
-                        dvs = element.getDesignVars(self.elem_index)
+                        dvs = pressure.getDesignVars(self.elem_index)
                         fail = elements.TestAdjResProduct(
                             pressure,
                             self.elem_index,
@@ -148,7 +149,7 @@ class ElementTest(unittest.TestCase):
                     with self.subTest(element=element_handle):
                         element = element_handle(transform, self.con)
                         pressure = element.createElementPressure(
-                            self.faceIndex, self.press
+                            self.faceIndex, self.press, self.pressureDVNum
                         )
                         fail = elements.TestAdjResXptProduct(
                             pressure,
@@ -173,9 +174,9 @@ class ElementTest(unittest.TestCase):
                     with self.subTest(element=element_handle):
                         element = element_handle(transform, self.con)
                         pressure = element.createElementPressure(
-                            self.faceIndex, self.press
+                            self.faceIndex, self.press, self.pressureDVNum
                         )
-                        dvs = element.getDesignVars(self.elem_index)
+                        dvs = pressure.getDesignVars(self.elem_index)
                         for matrix_type in self.matrix_types:
                             with self.subTest(matrix_type=matrix_type):
                                 fail = elements.TestElementMatDVSens(
@@ -201,7 +202,7 @@ class ElementTest(unittest.TestCase):
                     with self.subTest(element=element_handle):
                         element = element_handle(transform, self.con)
                         pressure = element.createElementPressure(
-                            self.faceIndex, self.press
+                            self.faceIndex, self.press, self.pressureDVNum
                         )
                         fail = elements.TestElementMatSVSens(
                             pressure,
