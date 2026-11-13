@@ -711,8 +711,11 @@ void SEP::printOrthogonality() {
 
   Poles of the spectral transform - images of infinite eigenvalues, which are
   not solutions - are partitioned to the end of p and left unsorted.
+
+  Returns the number of finite eigenvalues, i.e. the length of the sorted
+  front block of p.
 */
-void SEP::sortEigenvalues(TacsScalar *values, int neigs, int *p) {
+int SEP::sortEigenvalues(TacsScalar *values, int neigs, int *p) {
   // Partition in one pass: finite eigenvalues at the front, poles of the
   // spectral transform at the back. Only the front block is sorted.
   int nfinite = 0;
@@ -777,6 +780,8 @@ void SEP::sortEigenvalues(TacsScalar *values, int neigs, int *p) {
     // Place the index in the sorted array
     p[j + 1] = key;
   }
+
+  return nfinite;
 }
 
 /*!
@@ -799,7 +804,14 @@ int SEP::checkConverged(TacsScalar *A, TacsScalar *B, int n) {
 
   // Find the permutation which sorts the matrix in the desired
   // order
-  sortEigenvalues(eigs, n, perm);
+  int nfinite = sortEigenvalues(eigs, n, perm);
+
+  // Poles sit at the back of perm, so with fewer finite Ritz values than
+  // requested the loop below would test poles. Their error estimates are tiny,
+  // so they would pass and later be extracted as eigenvalues.
+  if (nfinite < neigvals) {
+    return 0;
+  }
 
   // Check for convergence of each of the desired eigenvalues
   int is_converged = 1;

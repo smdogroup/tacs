@@ -220,8 +220,8 @@ class SEP : public TACSObject {
   void printOrthogonality();
 
  private:
-  // Sort the eigenvalues by the desired spectrum
-  void sortEigenvalues(TacsScalar *values, int neigs, int *permutation);
+  // Sort the eigenvalues by the desired spectrum; returns the finite count
+  int sortEigenvalues(TacsScalar *values, int neigs, int *permutation);
 
   // Check whether the right eigenvalues have converged
   int checkConverged(TacsScalar *A, TacsScalar *B, int n);
