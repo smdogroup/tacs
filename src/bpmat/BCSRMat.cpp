@@ -141,7 +141,6 @@ BCSRMat::BCSRMat(MPI_Comm _comm, BCSRMat *mat, int levFill, double fill,
   comm = _comm;
   thread_info = mat->thread_info;
   thread_info->incref();
-  tdata = NULL;
   Adiag = NULL;
 
   if (fill < 1.0) {
@@ -214,7 +213,6 @@ BCSRMat::BCSRMat(MPI_Comm _comm, TACSThreadInfo *_thread_info, int bsize,
   comm = _comm;
   thread_info = _thread_info;
   thread_info->incref();
-  tdata = NULL;
   Adiag = NULL;
 
   data = new BCSRMatData(bsize, nrows, ncols);
@@ -260,7 +258,6 @@ BCSRMat::BCSRMat(MPI_Comm _comm, BCSRMat *Bmat, BCSRMat *Emat, BCSRMat *Fmat,
   comm = _comm;
   thread_info = Bmat->thread_info;
   thread_info->incref();
-  tdata = NULL;
   Adiag = NULL;
 
   // Check that the dimensions of the matrices match
@@ -322,7 +319,6 @@ BCSRMat::BCSRMat(MPI_Comm _comm, BCSRMat *smat, int *alevs, BCSRMat *amat,
   comm = _comm;
   thread_info = smat->thread_info;
   thread_info->incref();
-  tdata = NULL;
   Adiag = NULL;
 
   // Check that the block sizes are the same
@@ -490,7 +486,6 @@ BCSRMat::BCSRMat(MPI_Comm _comm, BCSRMat *B, double fill) {
   comm = _comm;
   thread_info = B->thread_info;
   thread_info->incref();
-  tdata = NULL;
   Adiag = NULL;
 
   data = new BCSRMatData(B->data->bsize, B->data->ncols, B->data->ncols);
@@ -588,9 +583,6 @@ BCSRMat::BCSRMat(MPI_Comm _comm, BCSRMat *B, double fill) {
 BCSRMat::~BCSRMat() {
   data->decref();
   thread_info->decref();
-  if (tdata) {
-    tdata->decref();
-  }
   if (Adiag) {
     delete[] Adiag;
   }
@@ -1011,15 +1003,6 @@ void BCSRMat::initGenericImpl() {
   applypartialupper = BCSRMatApplyPartialUpper;
   applyschur = BCSRMatApplyFactorSchur;
   applysor = BCSRMatApplySOR;
-
-  // No default threaded versions
-  bmultadd_thread = NULL;
-  bfactor_thread = NULL;
-  applylower_thread = NULL;
-  applyupper_thread = NULL;
-  bmatmult_thread = NULL;
-  bfactorlower_thread = NULL;
-  bfactorupper_thread = NULL;
 }
 
 /*
@@ -1046,28 +1029,11 @@ void BCSRMat::setBlockImpl() {
 }
 
 /*
-  Use the threaded kernels templated on the block size N
-*/
-template <int N>
-void BCSRMat::setBlockThreadImpl() {
-  bmultadd_thread = BCSRBlockMatVecMultAdd_thread<N>;
-  bfactor_thread = BCSRBlockMatFactor_thread<N>;
-  applylower_thread = BCSRBlockMatApplyLower_thread<N>;
-  applyupper_thread = BCSRBlockMatApplyUpper_thread<N>;
-  bmatmult_thread = BCSRBlockMatMatMultAdd_thread<N>;
-  bfactorlower_thread = BCSRBlockMatFactorLower_thread<N>;
-  bfactorupper_thread = BCSRBlockMatFactorUpper_thread<N>;
-}
-
-/*
   Initialize the block-specific implementations of each low-level
   routine
 */
 void BCSRMat::initBlockImpl() {
   initGenericImpl();
-
-  data->matvec_group_size = 32;
-  data->matmat_group_size = 4;
 
   switch (data->bsize) {
     case 1:
@@ -1086,21 +1052,13 @@ void BCSRMat::initBlockImpl() {
       setBlockImpl<5>();
       break;
     case 6:
-      // These are tuning parameters
-      data->matvec_group_size = 16;
-      data->matmat_group_size = 4;
       setBlockImpl<6>();
-      setBlockThreadImpl<6>();
       break;
     case 7:
       setBlockImpl<7>();
       break;
     case 8:
-      // These are tuning parameters
-      data->matvec_group_size = 16;
-      data->matmat_group_size = 4;
       setBlockImpl<8>();
-      setBlockThreadImpl<8>();
       break;
     default:
       break;
@@ -1120,113 +1078,24 @@ void BCSRMat::factor() {
     setUpDiag();
   }
 
-  if (bfactor_thread && thread_info->getNumThreads() > 1) {
-    // If not allocated, allocate the threaded data
-    if (!tdata) {
-      tdata = new BCSRMatThread(data);
-      tdata->incref();
-    }
-
-    tdata->init_apply_lower_sched();
-
-    // Create the joinable attribute
-    pthread_attr_t attr;
-    pthread_attr_init(&attr);
-    pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
-
-    // Go through and run the threads
-    for (long k = 0; k < thread_info->getNumThreads(); k++) {
-      pthread_create(&tdata->threads[k], &attr, bfactor_thread, (void *)tdata);
-    }
-
-    // Destroy the attribute and join all the threads
-    pthread_attr_destroy(&attr);
-    for (int k = 0; k < thread_info->getNumThreads(); k++) {
-      pthread_join(tdata->threads[k], NULL);
-    }
-  } else {
-    bfactor(data);
-  }
+  data->num_threads = thread_info->getNumThreads();
+  bfactor(data);
 }
 
 /*!
   Compute y = A*x
 */
 void BCSRMat::mult(TacsScalar *xvec, TacsScalar *yvec) {
-  if (bmultadd_thread && thread_info->getNumThreads() > 1) {
-    // If not allocated, allocate the threaded data
-    if (!tdata) {
-      tdata = new BCSRMatThread(data);
-      tdata->incref();
-    }
-
-    tdata->init_mat_mult_sched();
-    tdata->input = xvec;
-    tdata->output = yvec;
-    memset(yvec, 0, data->bsize * data->nrows * sizeof(TacsScalar));
-
-    // Create the joinable attribute
-    pthread_attr_t attr;
-    pthread_attr_init(&attr);
-    pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
-
-    // Go through and run the threads
-    for (long k = 0; k < thread_info->getNumThreads(); k++) {
-      pthread_create(&tdata->threads[k], &attr, bmultadd_thread, (void *)tdata);
-    }
-
-    // Destroy the attribute and join all the threads
-    pthread_attr_destroy(&attr);
-    for (int k = 0; k < thread_info->getNumThreads(); k++) {
-      pthread_join(tdata->threads[k], NULL);
-    }
-
-    tdata->input = tdata->output = NULL;
-  } else {
-    bmult(data, xvec, yvec);
-  }
+  data->num_threads = thread_info->getNumThreads();
+  bmult(data, xvec, yvec);
 }
 
 /*!
   Compute y = A*x + z
 */
 void BCSRMat::multAdd(TacsScalar *xvec, TacsScalar *zvec, TacsScalar *yvec) {
-  if (bmultadd_thread && thread_info->getNumThreads() > 1) {
-    // If not allocated, allocate the threaded data
-    if (!tdata) {
-      tdata = new BCSRMatThread(data);
-      tdata->incref();
-    }
-
-    // Assign the input/output info
-    tdata->init_mat_mult_sched();
-    tdata->input = xvec;
-    tdata->output = yvec;
-
-    if (zvec != yvec) {
-      memcpy(yvec, zvec, data->bsize * data->nrows * sizeof(TacsScalar));
-    }
-
-    // Create the joinable attribute
-    pthread_attr_t attr;
-    pthread_attr_init(&attr);
-    pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
-
-    // Go through and run the threads
-    for (long k = 0; k < thread_info->getNumThreads(); k++) {
-      pthread_create(&tdata->threads[k], &attr, bmultadd_thread, (void *)tdata);
-    }
-
-    // Destroy the attribute and join all the threads
-    pthread_attr_destroy(&attr);
-    for (int k = 0; k < thread_info->getNumThreads(); k++) {
-      pthread_join(tdata->threads[k], NULL);
-    }
-
-    tdata->input = tdata->output = NULL;
-  } else {
-    bmultadd(data, xvec, yvec, zvec);
-  }
+  data->num_threads = thread_info->getNumThreads();
+  bmultadd(data, xvec, yvec, zvec);
 }
 
 /*!
@@ -1256,56 +1125,9 @@ void BCSRMat::applyFactor(TacsScalar *xvec, TacsScalar *yvec) {
   if (!data->diag) {
     fprintf(stderr, "BCSRMat applyFactor error: matrix not factored\n");
   } else {
-    if (applylower_thread && applyupper_thread &&
-        thread_info->getNumThreads() > 1) {
-      // If not allocated, allocate the threaded data
-      if (!tdata) {
-        tdata = new BCSRMatThread(data);
-        tdata->incref();
-      }
-
-      if (yvec != xvec) {
-        memcpy(yvec, xvec, data->bsize * data->nrows * sizeof(TacsScalar));
-      }
-      tdata->output = yvec;
-
-      // Create the joinable attribute
-      pthread_attr_t attr;
-      pthread_attr_init(&attr);
-      pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
-
-      // Apply L^{-1}
-      tdata->init_apply_lower_sched();
-
-      // Go through and run the threads
-      for (long k = 0; k < thread_info->getNumThreads(); k++) {
-        pthread_create(&tdata->threads[k], &attr, applylower_thread,
-                       (void *)tdata);
-      }
-
-      for (int k = 0; k < thread_info->getNumThreads(); k++) {
-        pthread_join(tdata->threads[k], NULL);
-      }
-
-      // Apply U^{-1}
-      tdata->init_apply_upper_sched();
-
-      // Go through and run the threads
-      for (long k = 0; k < thread_info->getNumThreads(); k++) {
-        pthread_create(&tdata->threads[k], &attr, applyupper_thread,
-                       (void *)tdata);
-      }
-
-      for (int k = 0; k < thread_info->getNumThreads(); k++) {
-        pthread_join(tdata->threads[k], NULL);
-      }
-
-      // Destroy the attribute and join all the threads
-      pthread_attr_destroy(&attr);
-    } else {
-      applylower(data, xvec, yvec);
-      applyupper(data, yvec, yvec);
-    }
+    data->num_threads = thread_info->getNumThreads();
+    applylower(data, xvec, yvec);
+    applyupper(data, yvec, yvec);
   }
 }
 
@@ -1320,53 +1142,9 @@ void BCSRMat::applyFactor(TacsScalar *xvec) {
   if (!data->diag) {
     fprintf(stderr, "BCSRMat applyFactor error: matrix not factored\n");
   } else {
-    if (applylower_thread && applyupper_thread &&
-        thread_info->getNumThreads() > 1) {
-      // If not allocated, allocate the threaded data
-      if (!tdata) {
-        tdata = new BCSRMatThread(data);
-        tdata->incref();
-      }
-
-      tdata->output = xvec;
-
-      // Create the joinable attribute
-      pthread_attr_t attr;
-      pthread_attr_init(&attr);
-      pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
-
-      // Apply L^{-1}
-      tdata->init_apply_lower_sched();
-
-      // Go through and run the threads
-      for (long k = 0; k < thread_info->getNumThreads(); k++) {
-        pthread_create(&tdata->threads[k], &attr, applylower_thread,
-                       (void *)tdata);
-      }
-
-      for (int k = 0; k < thread_info->getNumThreads(); k++) {
-        pthread_join(tdata->threads[k], NULL);
-      }
-
-      // Apply U^{-1}
-      tdata->init_apply_upper_sched();
-
-      // Go through and run the threads
-      for (long k = 0; k < thread_info->getNumThreads(); k++) {
-        pthread_create(&tdata->threads[k], &attr, applyupper_thread,
-                       (void *)tdata);
-      }
-
-      for (int k = 0; k < thread_info->getNumThreads(); k++) {
-        pthread_join(tdata->threads[k], NULL);
-      }
-
-      // Destroy the attribute and join all the threads
-      pthread_attr_destroy(&attr);
-    } else {
-      applylower(data, xvec, xvec);
-      applyupper(data, xvec, xvec);
-    }
+    data->num_threads = thread_info->getNumThreads();
+    applylower(data, xvec, xvec);
+    applyupper(data, xvec, xvec);
   }
 }
 
@@ -1539,40 +1317,8 @@ void BCSRMat::matMultAdd(double alpha, BCSRMat *amat, BCSRMat *bmat) {
             bmat->data->nrows, bmat->data->ncols);
   }
 
-  if (bmatmult_thread && thread_info->getNumThreads() > 1) {
-    // If not allocated, allocate the threaded data
-    if (!tdata) {
-      tdata = new BCSRMatThread(data);
-      tdata->incref();
-    }
-
-    // Set the data for the matrix multiplication
-    tdata->init_mat_mult_sched();
-    tdata->Amat = amat->data;
-    tdata->Bmat = bmat->data;
-    tdata->alpha = alpha;
-
-    // Create the joinable attribute
-    pthread_attr_t attr;
-    pthread_attr_init(&attr);
-    pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
-
-    // Go through and run the threads
-    for (long k = 0; k < thread_info->getNumThreads(); k++) {
-      pthread_create(&tdata->threads[k], &attr, bmatmult_thread, (void *)tdata);
-    }
-
-    // Destroy the attribute and join all the threads
-    pthread_attr_destroy(&attr);
-    for (int k = 0; k < thread_info->getNumThreads(); k++) {
-      pthread_join(tdata->threads[k], NULL);
-    }
-
-    tdata->alpha = 0.0;
-    tdata->Amat = tdata->Bmat = NULL;
-  } else {
-    bmatmult(alpha, amat->data, bmat->data, data);
-  }
+  data->num_threads = thread_info->getNumThreads();
+  bmatmult(alpha, amat->data, bmat->data, data);
 }
 
 /*!
@@ -1591,37 +1337,8 @@ void BCSRMat::applyLowerFactor(BCSRMat *emat) {
             "correction dimensions\n");
   }
 
-  if (bfactorlower_thread && thread_info->getNumThreads() > 1) {
-    // If not allocated, allocate the threaded data
-    if (!tdata) {
-      tdata = new BCSRMatThread(data);
-      tdata->incref();
-    }
-
-    tdata->Amat = emat->data;
-    tdata->init_apply_lower_sched();
-
-    // Create the joinable attribute
-    pthread_attr_t attr;
-    pthread_attr_init(&attr);
-    pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
-
-    // Go through and run the threads
-    for (long k = 0; k < thread_info->getNumThreads(); k++) {
-      pthread_create(&tdata->threads[k], &attr, bfactorlower_thread,
-                     (void *)tdata);
-    }
-
-    // Destroy the attribute and join all the threads
-    pthread_attr_destroy(&attr);
-    for (int k = 0; k < thread_info->getNumThreads(); k++) {
-      pthread_join(tdata->threads[k], NULL);
-    }
-
-    tdata->Amat = NULL;
-  } else {
-    bfactorlower(data, emat->data);
-  }
+  data->num_threads = thread_info->getNumThreads();
+  bfactorlower(data, emat->data);
 }
 
 /*!
@@ -1640,37 +1357,8 @@ void BCSRMat::applyUpperFactor(BCSRMat *fmat) {
             "correction dimensions\n");
   }
 
-  if (bfactorupper_thread && thread_info->getNumThreads() > 1) {
-    // If not allocated, allocate the threaded data
-    if (!tdata) {
-      tdata = new BCSRMatThread(data);
-      tdata->incref();
-    }
-
-    tdata->Amat = fmat->data;
-    tdata->init_mat_mult_sched();
-
-    // Create the joinable attribute
-    pthread_attr_t attr;
-    pthread_attr_init(&attr);
-    pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
-
-    // Go through and run the threads
-    for (long k = 0; k < thread_info->getNumThreads(); k++) {
-      pthread_create(&tdata->threads[k], &attr, bfactorupper_thread,
-                     (void *)tdata);
-    }
-
-    // Destroy the attribute and join all the threads
-    pthread_attr_destroy(&attr);
-    for (int k = 0; k < thread_info->getNumThreads(); k++) {
-      pthread_join(tdata->threads[k], NULL);
-    }
-
-    tdata->Amat = NULL;
-  } else {
-    bfactorupper(data, fmat->data);
-  }
+  data->num_threads = thread_info->getNumThreads();
+  bfactorupper(data, fmat->data);
 }
 
 /*

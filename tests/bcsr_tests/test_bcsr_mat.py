@@ -763,17 +763,69 @@ class TestBCSRMatKernels(unittest.TestCase):
 
 class TestBCSRMatThreadedKernels(TestBCSRMatKernels):
     """
-    The same checks with two threads for block sizes 6 and 8, the only sizes with threaded kernels.
+    The same checks with four threads on larger matrices.
 
-    BCSRMat uses the pthread kernels (mult/multAdd, factor, applyFactor, matMultAdd, applyLowerFactor,
-    applyUpperFactor) whenever a threaded kernel exists and the thread count exceeds one; rows are handed
-    out in groups of 16 (matrix-vector) or 4 (matrix-matrix), so 40 rows give each scheduler several jobs.
+    When TACS is built with OpenMP, the kernels for block sizes 1 to 8 share the rows of mult/multAdd,
+    matMultAdd and applyUpperFactor among the threads, and factor and applyLowerFactor use their threaded
+    loop when the rows hold enough work. Without OpenMP the same code runs on one thread.
     """
 
-    BLOCK_SIZES = (6, 8)
-    NUM_THREADS = 2
+    NUM_THREADS = 4
     NUM_ROWS = 40
     NUM_COLS = 37
+
+
+class TestBCSRMatThreadConsistency(unittest.TestCase):
+    """Threaded kernels on matrices large enough for the factorization loop to split its steps among threads."""
+
+    BLOCK_SIZES = (3, 6)
+    NUM_THREADS = 4
+    NUM_ROWS = 160
+
+    def runKernels(self, bsize: int, numThreads: int) -> list[np.ndarray]:
+        """Return the results of mult, two factorizations with solves, and the Schur-complement sequence."""
+        rng = np.random.default_rng(SEED + bsize)
+        mat, _ = makeMatrix(
+            rng, bsize, makeSquareMask(rng, self.NUM_ROWS), True, numThreads
+        )
+        x = makeRandomArray(rng, self.NUM_ROWS * bsize)
+        product = np.zeros_like(x)
+        mat.mult(x, product)
+        results = [product]
+
+        for levFill in (0, FULL_LEV_FILL):
+            factor = TACS.BCSRMatrix.createILU(mat, levFill, FILL_ESTIMATE)
+            factor.copyValues(mat)
+            factor.factor()
+            solution = np.zeros_like(x)
+            factor.applyFactor(x, solution)
+            results += [getDense(factor), solution]
+
+        parts = mat.partition(self.NUM_ROWS // 2)
+        factors = TACS.BCSRMatrix.createSchur(
+            *parts, FULL_LEV_FILL, FILL_ESTIMATE, True
+        )
+        for factorMat, part in zip(factors, parts, strict=True):
+            factorMat.copyValues(part)
+        matBpc, matEpc, matFpc, matSc = factors
+        matBpc.factor()
+        matBpc.applyLowerFactor(matEpc)
+        matBpc.applyUpperFactor(matFpc)
+        matSc.matMultAdd(-1.0, matFpc, matEpc)
+        return results + [getDense(factorMat) for factorMat in factors]
+
+    def test_results_do_not_depend_on_thread_count(self):
+        """
+        Given a dominant matrix whose rows hold enough work for the factorization loop to use several threads,
+        when mult, ILU(0) and full-fill factor, applyFactor and the Schur-complement sequence run with four threads,
+        then every result is identical to the result with one thread.
+        """
+        for bsize in self.BLOCK_SIZES:
+            with self.subTest(bsize=bsize):
+                serialResults = self.runKernels(bsize, 1)
+                threadedResults = self.runKernels(bsize, self.NUM_THREADS)
+                for threaded, serial in zip(threadedResults, serialResults, strict=True):
+                    np.testing.assert_array_equal(threaded, serial)
 
 
 class TestBCSRMatrixValidation(unittest.TestCase):

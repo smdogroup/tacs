@@ -1134,7 +1134,8 @@ cdef class BCSRMatrix:
     A : array_like, shape (nnz, bsize, bsize), optional
         Row-major block values; zero if omitted.
     num_threads : int, optional
-        Number of pthreads used by the threaded kernels (block sizes 6 and 8).
+        Number of threads used by the kernels for block sizes 1 to 8; this only
+        has an effect when TACS is built with OpenMP.
 
     Notes
     -----

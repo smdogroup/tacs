@@ -2,8 +2,8 @@
 Benchmark of the BCSRMat block sparse matrix kernels (through ``TACS.BCSRMatrix``).
 
 For each block size a structured problem is built (2-D grid of nodes, 9-point block stencil,
-natural ordering, random block-diagonally dominant values) and each operation is timed as the
-best of ``--repeats`` runs. Results are printed as a table (milliseconds per call) and optionally
+natural or nested-dissection ordering, random block-diagonally dominant values) and each operation
+is timed as the best of ``--repeats`` runs, with ``--threads`` threads. Results are printed as a table (milliseconds per call) and optionally
 written as JSON of the form ``{"meta": {...}, "times": {operation: {block size: seconds}}}``.
 
 Example (pinned to one core)::
@@ -29,6 +29,7 @@ FILL_ESTIMATE = 10.0
 STENCIL_REACH = 1  # 9-point stencil: neighbours within one node in each grid direction
 NUM_VECTOR_CALLS = 20  # calls per timed sample for the cheap vector operations
 SOR_OMEGA = 1.0
+ND_LEAF_SIZE = 3  # grid regions this narrow or narrower are not dissected further
 OPERATIONS = (
     "mult",
     "multAdd",
@@ -44,34 +45,71 @@ OPERATIONS = (
 )
 
 
-def buildGridPattern(gridSize: int) -> tuple[np.ndarray, np.ndarray]:
-    """Return (rowp, cols) of the 9-point stencil on a gridSize x gridSize grid in natural ordering."""
+def orderNestedDissection(iiRange: range, jjRange: range, gridSize: int) -> list[int]:
+    """Return the nodes of a grid region ordered by nested dissection, separators last."""
+    isSplitInJj = len(jjRange) >= len(iiRange)
+    longRange = jjRange if isSplitInJj else iiRange
+    if len(longRange) <= ND_LEAF_SIZE:
+        return [jj * gridSize + ii for jj in jjRange for ii in iiRange]
+    mid = longRange[len(longRange) // 2]
+    lowRange = range(longRange.start, mid)
+    highRange = range(mid + 1, longRange.stop)
+    sepRange = range(mid, mid + 1)
+    if isSplitInJj:
+        parts = [(iiRange, lowRange), (iiRange, highRange), (iiRange, sepRange)]
+    else:
+        parts = [(lowRange, jjRange), (highRange, jjRange), (sepRange, jjRange)]
+    order = []
+    for iiPart, jjPart in parts:
+        order += orderNestedDissection(iiPart, jjPart, gridSize)
+    return order
+
+
+def buildGridPattern(
+    gridSize: int, ordering: str = "natural"
+) -> tuple[np.ndarray, np.ndarray]:
+    """Return (rowp, cols) of the 9-point stencil on a gridSize x gridSize grid in the given ordering."""
+    numNodes = gridSize**2
+    order = np.arange(numNodes)
+    if ordering == "nd":
+        order = np.array(
+            orderNestedDissection(range(gridSize), range(gridSize), gridSize)
+        )
+    newIndex = np.empty(numNodes, dtype=int)
+    newIndex[order] = np.arange(numNodes)
+
     rowp = [0]
     cols = []
-    for jj in range(gridSize):
-        for ii in range(gridSize):
+    for node in order:
+        jj, ii = divmod(int(node), gridSize)
+        nbrs = [
+            jjNbr * gridSize + iiNbr
             for jjNbr in range(
                 max(jj - STENCIL_REACH, 0), min(jj + STENCIL_REACH, gridSize - 1) + 1
-            ):
-                for iiNbr in range(
-                    max(ii - STENCIL_REACH, 0),
-                    min(ii + STENCIL_REACH, gridSize - 1) + 1,
-                ):
-                    cols.append(jjNbr * gridSize + iiNbr)
-            rowp.append(len(cols))
+            )
+            for iiNbr in range(
+                max(ii - STENCIL_REACH, 0), min(ii + STENCIL_REACH, gridSize - 1) + 1
+            )
+        ]
+        cols += sorted(newIndex[nbrs].tolist())
+        rowp.append(len(cols))
     return np.array(rowp), np.array(cols)
 
 
 def buildGridMatrix(
-    rng: np.random.Generator, bsize: int, gridSize: int
+    rng: np.random.Generator,
+    bsize: int,
+    gridSize: int,
+    ordering: str = "natural",
+    numThreads: int = 1,
 ) -> TACS.BCSRMatrix:
     """Return the block-diagonally dominant random stencil matrix for one block size."""
-    rowp, cols = buildGridPattern(gridSize)
+    rowp, cols = buildGridPattern(gridSize, ordering)
     blocks = rng.uniform(-1.0, 1.0, (len(cols), bsize, bsize)).astype(TACS.dtype)
     maxRowSum = (2 * STENCIL_REACH + 1) ** 2 * bsize
     rows = np.repeat(np.arange(len(rowp) - 1), np.diff(rowp))
     blocks[rows == cols] += (maxRowSum + 1.0) * np.eye(bsize)
-    return TACS.BCSRMatrix(bsize, rowp, cols, A=blocks)
+    return TACS.BCSRMatrix(bsize, rowp, cols, A=blocks, num_threads=numThreads)
 
 
 def timeBest(
@@ -130,10 +168,16 @@ def timeSchurSequence(mat: TACS.BCSRMatrix, repeats: int) -> dict[str, float]:
     }
 
 
-def benchmarkBlockSize(bsize: int, gridSize: int, repeats: int) -> dict[str, float]:
+def benchmarkBlockSize(
+    bsize: int,
+    gridSize: int,
+    repeats: int,
+    ordering: str = "natural",
+    numThreads: int = 1,
+) -> dict[str, float]:
     """Return the time in seconds of every operation for one block size."""
     rng = np.random.default_rng(SEED + bsize)
-    mat = buildGridMatrix(rng, bsize, gridSize)
+    mat = buildGridMatrix(rng, bsize, gridSize, ordering, numThreads)
     size = bsize * mat.getRowDim()
     x = rng.uniform(-1.0, 1.0, size).astype(TACS.dtype)
     y = np.zeros(size, dtype=TACS.dtype)
@@ -195,13 +239,22 @@ def main() -> None:
         default=list(range(1, 9)),
         help="block sizes to run",
     )
+    parser.add_argument(
+        "--ordering",
+        choices=("natural", "nd"),
+        default="natural",
+        help="node ordering: natural (banded) or nested dissection",
+    )
+    parser.add_argument(
+        "--threads", type=int, default=1, help="threads used by the kernels"
+    )
     parser.add_argument("--out", type=str, default=None, help="JSON output file")
     args = parser.parse_args()
 
     times: dict[str, dict[str, float]] = {operation: {} for operation in OPERATIONS}
     for bsize in args.block_sizes:
         for operation, seconds in benchmarkBlockSize(
-            bsize, args.grid, args.repeats
+            bsize, args.grid, args.repeats, args.ordering, args.threads
         ).items():
             times[operation][str(bsize)] = seconds
     printTable(times, args.block_sizes)
@@ -211,6 +264,8 @@ def main() -> None:
             "grid": args.grid,
             "numBlockRows": args.grid**2,
             "repeats": args.repeats,
+            "ordering": args.ordering,
+            "numThreads": args.threads,
             "blockSizes": args.block_sizes,
             "dtype": np.dtype(TACS.dtype).name,
             "machine": platform.machine(),

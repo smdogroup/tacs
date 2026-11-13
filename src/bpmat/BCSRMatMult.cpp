@@ -36,9 +36,8 @@ BCSRMatData::BCSRMatData(int _bsize, int _nrows, int _ncols) {
   cols = NULL;
   A = NULL;
 
-  // The sizes of the groups of procs
-  matvec_group_size = 1;
-  matmat_group_size = 1;
+  num_threads = 1;
+  lower_column_rows = NULL;
 }
 
 BCSRMatData::~BCSRMatData() {
@@ -54,249 +53,52 @@ BCSRMatData::~BCSRMatData() {
   if (A) {
     delete[] A;
   }
-}
-
-/*
-  The implementation of the BCSRMatThread class
-*/
-BCSRMatThread::BCSRMatThread(BCSRMatData *_mat) {
-  mat = _mat;
-  mat->incref();
-
-  Amat = NULL;
-  Bmat = NULL;
-  input = NULL;
-  output = NULL;
-
-  int nrows = mat->nrows;
-
-  assigned_row_index = new int[nrows];
-  completed_row_index = new int[nrows];
-
-  num_completed_rows = 0;
-  pthread_mutex_init(&mutex, NULL);
-  pthread_cond_init(&cond, NULL);
-}
-
-BCSRMatThread::~BCSRMatThread() {
-  mat->decref();
-
-  pthread_mutex_destroy(&mutex);
-  pthread_cond_destroy(&cond);
-
-  if (assigned_row_index) {
-    delete[] assigned_row_index;
-  }
-  if (completed_row_index) {
-    delete[] completed_row_index;
+  if (lower_column_rows) {
+    delete lower_column_rows;
   }
 }
 
-/*
-  Schedule the jobs for matrix-vector and matrix-matrix products with
-  a given group size
-*/
-void BCSRMatThread::init_mat_mult_sched() { num_completed_rows = 0; }
-
-void BCSRMatThread::mat_mult_sched_job(const int group_size, int *row) {
-  const int nrows = mat->nrows;
-
-  pthread_mutex_lock(&mutex);
-
-  if (num_completed_rows < nrows) {
-    *row = num_completed_rows;
-    num_completed_rows += group_size;
-  } else {
-    *row = -1;
+const BCSRMatColumnRows *BCSRMatData::getLowerColumnRows() {
+  if (!lower_column_rows) {
+    lower_column_rows = new BCSRMatColumnRows(nrows, rowp, cols);
   }
-
-  pthread_mutex_unlock(&mutex);
-}
-
-void BCSRMatThread::mat_mult_sched_job_size(const int group_size, int *row,
-                                            const int nrows) {
-  pthread_mutex_lock(&mutex);
-
-  if (num_completed_rows < nrows) {
-    *row = num_completed_rows;
-    num_completed_rows += group_size;
-  } else {
-    *row = -1;
-  }
-
-  pthread_mutex_unlock(&mutex);
+  return lower_column_rows;
 }
 
 /*
-  Initialize the data for the lower scheduler
+  Find the rows with a block below the diagonal in each column
 */
-void BCSRMatThread::init_apply_lower_sched() {
-  num_completed_rows = 0;
-  memset(assigned_row_index, 0, mat->nrows * sizeof(int));
-  memset(completed_row_index, 0, mat->nrows * sizeof(int));
-}
-
-/*
-  Determine the next job to do based on what rows have been completed
-  and what tasks are yet to be performed.
-
-  Note that a row cannot be assigned unless all processes are
-  completed on that row.
-*/
-void BCSRMatThread::apply_lower_sched_job(const int group_size, int *index,
-                                          int *irow, int *jstart, int *jend) {
-  // Obtain the mutex lock now
-  pthread_mutex_lock(&mutex);
-
-  *index = -1;
-  *irow = -1;
-  *jstart = -1;
-  *jend = -1;
-
-  const int nrows = mat->nrows;
-
-  while (num_completed_rows < nrows && *index < 0) {
-    int ii = num_completed_rows / group_size;
-    int i = num_completed_rows;
-
-    for (; i < nrows; i += group_size, ii++) {
-      if ((completed_row_index[ii] == assigned_row_index[ii]) &&
-          (completed_row_index[ii] == i)) {
-        // A digaonal is available - assign it to a thread for completion
-        *index = ii;
-        *irow = i;
-        *jstart = completed_row_index[ii];
-        *jend = completed_row_index[ii] + group_size;
-
-        assigned_row_index[ii] = completed_row_index[ii] + group_size;
-        break;
-      } else if ((completed_row_index[ii] < i + group_size) &&
-                 (completed_row_index[ii] < num_completed_rows) &&
-                 (completed_row_index[ii] == assigned_row_index[ii])) {
-        // Assign the remainder of the avaiable row for completion by a thread
-        *index = ii;
-        *irow = i;
-        *jstart = completed_row_index[ii];
-        *jend = num_completed_rows;
-
-        assigned_row_index[ii] = num_completed_rows;
-        break;
-      }
-    }
-
-    if (num_completed_rows < nrows && *index < 0) {
-      pthread_cond_wait(&cond, &mutex);
+BCSRMatColumnRows::BCSRMatColumnRows(int nrows, const int *rowp,
+                                     const int *cols) {
+  // Count the blocks below the diagonal in each column
+  colp = new int[nrows + 1];
+  memset(colp, 0, (nrows + 1) * sizeof(int));
+  for (int i = 0; i < nrows; i++) {
+    for (int k = rowp[i]; (k < rowp[i + 1]) && (cols[k] < i); k++) {
+      colp[cols[k] + 1]++;
     }
   }
-
-  pthread_mutex_unlock(&mutex);
-}
-
-/*
-  Once the operations on a row are completed, call this function
-  to mark that the operation is completed final values
-*/
-void BCSRMatThread::apply_lower_mark_completed(const int group_size, int index,
-                                               int irow, int jstart, int jend) {
-  // Obtain the mutex lock now
-  pthread_mutex_lock(&mutex);
-
-  if (irow >= 0) {
-    completed_row_index[index] = jend;
-    if (jend > num_completed_rows) {
-      num_completed_rows = jend;
-    }
+  for (int j = 0; j < nrows; j++) {
+    colp[j + 1] += colp[j];
   }
 
-  pthread_cond_broadcast(&cond);
-  pthread_mutex_unlock(&mutex);
-}
-
-/*
-  Initialize the data for the upper scheduler
-*/
-void BCSRMatThread::init_apply_upper_sched() {
-  num_completed_rows = 0;
-  memset(assigned_row_index, 0, mat->nrows * sizeof(int));
-  memset(completed_row_index, 0, mat->nrows * sizeof(int));
-}
-
-/*
-  Determine the next job to do based on what rows have been completed
-  and what tasks are yet to be performed.
-
-  Note that a row cannot be assigned unless all processes are
-  completed on that row.
-*/
-void BCSRMatThread::apply_upper_sched_job(const int group_size, int *index,
-                                          int *irow, int *jstart, int *jend) {
-  // Obtain the mutex lock now
-  pthread_mutex_lock(&mutex);
-
-  *index = -1;
-  *irow = -1;
-  *jstart = -1;
-  *jend = -1;
-
-  const int nrows = mat->nrows;
-
-  while (num_completed_rows < nrows && *index < 0) {
-    int ii = num_completed_rows / group_size;
-    int i = num_completed_rows;
-
-    for (; i < nrows; i += group_size, ii++) {
-      if ((completed_row_index[ii] == assigned_row_index[ii]) &&
-          (completed_row_index[ii] == i)) {
-        // A digaonal is available - assign it to a thread for completion
-        *index = ii;
-        *irow = nrows - i;
-        *jend = nrows - completed_row_index[ii];
-        *jstart = nrows - (completed_row_index[ii] + group_size);
-
-        assigned_row_index[ii] = completed_row_index[ii] + group_size;
-        break;
-      } else if ((completed_row_index[ii] < i + group_size) &&
-                 (completed_row_index[ii] < num_completed_rows) &&
-                 (completed_row_index[ii] == assigned_row_index[ii])) {
-        // Assign the remainder of the avaiable row for completion by a thread
-        *index = ii;
-        *irow = nrows - i;
-        *jstart = nrows - num_completed_rows;
-        *jend = nrows - completed_row_index[ii];
-
-        assigned_row_index[ii] = num_completed_rows;
-        break;
-      }
-    }
-
-    if (num_completed_rows < nrows && *index < 0) {
-      pthread_cond_wait(&cond, &mutex);
+  // Place the rows, then restore the column pointer
+  rows = new int[colp[nrows]];
+  for (int i = 0; i < nrows; i++) {
+    for (int k = rowp[i]; (k < rowp[i + 1]) && (cols[k] < i); k++) {
+      rows[colp[cols[k]]] = i;
+      colp[cols[k]]++;
     }
   }
-
-  pthread_mutex_unlock(&mutex);
+  for (int j = nrows; j > 0; j--) {
+    colp[j] = colp[j - 1];
+  }
+  colp[0] = 0;
 }
 
-/*
-  Once the operations on a row are completed, call this function
-  to mark that the operation is completed final values
-*/
-void BCSRMatThread::apply_upper_mark_completed(const int group_size, int index,
-                                               int irow, int jstart, int jend) {
-  // Obtain the mutex lock now
-  pthread_mutex_lock(&mutex);
-  const int nrows = mat->nrows;
-
-  if (irow >= 0) {
-    completed_row_index[index] = nrows - jstart;
-
-    if (nrows - jstart > num_completed_rows) {
-      num_completed_rows = nrows - jstart;
-    }
-  }
-
-  pthread_cond_broadcast(&cond);
-  pthread_mutex_unlock(&mutex);
+BCSRMatColumnRows::~BCSRMatColumnRows() {
+  delete[] colp;
+  delete[] rows;
 }
 
 /*!

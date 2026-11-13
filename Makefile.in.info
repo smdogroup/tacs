@@ -35,6 +35,12 @@ SO_LINK_FLAGS=-fPIC -shared
 # SO_EXT=so
 # SO_LINK_FLAGS=-fPIC -dynamiclib
 
+# To run the block matrix kernels (BCSRMat) on several threads, compile
+# and link with OpenMP. Without it they run on one thread.
+# EXTRA_CC_FLAGS += -fopenmp
+# EXTRA_DEBUG_CC_FLAGS += -fopenmp
+# SO_LINK_FLAGS += -fopenmp
+
 # This uses the default installation of LAPACK.
 # Use an optimized version of LAPACK if available.
 # You may also have to include -lblas as well.

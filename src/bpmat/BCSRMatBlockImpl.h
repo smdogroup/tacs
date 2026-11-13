@@ -45,7 +45,6 @@
   All blocks are N x N, stored row-major.
 */
 
-#include <pthread.h>  // pthread_exit
 #include <stdio.h>   // fprintf, stderr
 #include <string.h>  // memcpy
 
@@ -65,6 +64,24 @@
 #else
 #define TACS_BCSR_MIN_AXPY_BLOCK_SIZE 5
 #endif
+
+/*
+  Tuning parameters of the threaded kernels (used with OpenMP only).
+
+  Work is measured in blocks times the cube of the block size. The
+  factorization loop uses threads when the average block below the
+  diagonal has a row of at least TACS_BCSR_MIN_BLOCK_WORK to combine with
+  its own, and runs a step on several threads when its rows hold at least
+  TACS_BCSR_MIN_PARALLEL_WORK. Before each step, up to
+  TACS_BCSR_LOOK_AHEAD rounds of rows that hold less than that are
+  finished on one thread. Dynamically scheduled loops hand out their rows
+  in TACS_BCSR_CHUNKS_PER_THREAD chunks per thread. The values were chosen
+  for block size 6 with GCC 15 on aarch64.
+*/
+#define TACS_BCSR_MIN_BLOCK_WORK 500L
+#define TACS_BCSR_MIN_PARALLEL_WORK 200000L
+#define TACS_BCSR_LOOK_AHEAD 8
+#define TACS_BCSR_CHUNKS_PER_THREAD 8
 
 // ==============================================================================
 // Block operations
@@ -298,14 +315,17 @@ void BCSRBlockMatVecMult(BCSRMatData *data, TacsScalar *x, TacsScalar *y) {
   const int nrows = data->nrows;
   const int *rowp = data->rowp;
   const int *cols = data->cols;
-  const TacsScalar *a = data->A;
+  const TacsScalar *A = data->A;
+  const int numThreads = data->num_threads;
 
+#pragma omp parallel for num_threads(numThreads) schedule(static)
   for (int i = 0; i < nrows; i++) {
     TacsScalar sums[N];
     for (int n = 0; n < N; n++) {
       sums[n] = 0.0;
     }
 
+    const TacsScalar *a = &A[N * N * rowp[i]];
     const int end = rowp[i + 1];
     for (int k = rowp[i]; k < end; k++) {
       blockMultAdd<N>(a, &x[N * cols[k]], sums);
@@ -338,14 +358,17 @@ void BCSRBlockMatVecMultAdd(BCSRMatData *data, TacsScalar *x, TacsScalar *y,
   const int nrows = data->nrows;
   const int *rowp = data->rowp;
   const int *cols = data->cols;
-  const TacsScalar *a = data->A;
+  const TacsScalar *A = data->A;
+  const int numThreads = data->num_threads;
 
+#pragma omp parallel for num_threads(numThreads) schedule(static)
   for (int i = 0; i < nrows; i++) {
     TacsScalar sums[N];
     for (int n = 0; n < N; n++) {
       sums[n] = z[N * i + n];
     }
 
+    const TacsScalar *a = &A[N * N * rowp[i]];
     const int end = rowp[i + 1];
     for (int k = rowp[i]; k < end; k++) {
       blockMultAdd<N>(a, &x[N * cols[k]], sums);
@@ -358,6 +381,207 @@ void BCSRBlockMatVecMultAdd(BCSRMatData *data, TacsScalar *x, TacsScalar *y,
   }
 
   TacsAddFlops(2 * N * N * rowp[nrows]);
+}
+
+// ==============================================================================
+// Loop over the blocks below the diagonal
+// ==============================================================================
+
+/**
+ * @brief Decide whether the loop over the blocks below the diagonal should
+ * use its threaded form
+ *
+ * The threaded form costs some bookkeeping for every block below the
+ * diagonal, which only pays off when these blocks carry enough work on
+ * average. The work of a block is measured by the size of the row of its
+ * column in workData.
+ *
+ * @param data BCSR matrix data with its diagonal index
+ * @param workData Matrix whose rows measure the work
+ * @return Whether to use the threaded loop
+ */
+static inline bool BCSRIsLowerLoopThreaded(const BCSRMatData *data,
+                                           const BCSRMatData *workData) {
+  if (data->num_threads <= 1) {
+    return false;
+  }
+
+  const int *rowp = data->rowp;
+  const int *cols = data->cols;
+  const int *diag = data->diag;
+  const int *workRowp = workData->rowp;
+
+  long numBlocks = 0;
+  long workBlocks = 0;
+  for (int i = 0; i < data->nrows; i++) {
+    numBlocks += diag[i] - rowp[i];
+    for (int j = rowp[i]; j < diag[i]; j++) {
+      workBlocks += workRowp[cols[j] + 1] - workRowp[cols[j]];
+    }
+  }
+
+  const long blockWork = data->bsize * data->bsize * data->bsize;
+  return blockWork * workBlocks >= TACS_BCSR_MIN_BLOCK_WORK * numBlocks;
+}
+
+/**
+ * @brief Process the blocks below the diagonal of every row on several
+ * threads, in an order in which a block is processed after the row of its
+ * column is finished
+ *
+ * This is the threaded loop of the factorization kernels. For each row i,
+ * entryFunc(i, j) is called for its blocks j = rowp[i], ..., diag[i] - 1
+ * in that order, and then finishFunc(i), after which row i is finished.
+ * entryFunc(i, j) is only called once row cols[j] is finished. Each row
+ * therefore sees the same sequence of calls as in the serial loop of the
+ * kernels, and the results do not depend on the number of threads.
+ *
+ * The work proceeds in steps: in each step every row that can advance
+ * processes, in parallel with the others, all of its blocks whose columns
+ * are finished. The rows that finish in a step release the rows below them
+ * for the next step.
+ *
+ * It is kept out of line, and the kernels call their per-block functions
+ * directly in their serial loops: with the threaded loop inlined, or with
+ * the serial loop going through the lambdas, the serial factorization was
+ * 5-7% slower (GCC 15, aarch64).
+ *
+ * @param data BCSR matrix data with its diagonal index
+ * @param workData Matrix whose number of blocks in row i measures the work
+ * of entryFunc on that row; steps with little work run on one thread
+ * @param entryFunc Function of the row and the index of a block in it;
+ * it may write to row i only, and read finished rows
+ * @param finishFunc Function of the row
+ */
+template <class EntryFunc, class FinishFunc>
+static TACS_BCSR_NOINLINE void BCSRForEachLowerBlockThreaded(
+    BCSRMatData *data, const BCSRMatData *workData, const EntryFunc &entryFunc,
+    const FinishFunc &finishFunc) {
+  const int nrows = data->nrows;
+  const int *rowp = data->rowp;
+  const int *cols = data->cols;
+  const int *diag = data->diag;
+  const int numThreads = data->num_threads;
+  const int *workRowp = workData->rowp;
+  const long blockWork = data->bsize * data->bsize * data->bsize;
+
+  const BCSRMatColumnRows *columnRows = data->getLowerColumnRows();
+  const int *colp = columnRows->colp;
+  const int *waitingRows = columnRows->rows;
+
+  int *next = new int[nrows];          // Next block to process in each row
+  char *isFinished = new char[nrows];  // Whether each row is finished
+  int *lastStep = new int[nrows];      // Last step that released each row
+  int *ready = new int[nrows];         // Rows that may advance in this step
+  int *nextReady = new int[nrows];     // Rows released for the next step
+  memcpy(next, rowp, nrows * sizeof(int));
+  memset(isFinished, 0, nrows * sizeof(char));
+
+  // Every row takes part in the first step, which finishes the rows
+  // without blocks below the diagonal
+  int step = 0;
+  int numReady = nrows;
+  long readyWork = blockWork * workRowp[nrows];
+  for (int i = 0; i < nrows; i++) {
+    ready[i] = i;
+    lastStep[i] = step;
+  }
+
+  // Process the blocks of row i whose columns are finished
+  auto advanceRow = [&](const int i) {
+    int j = next[i];
+    for (; (j < diag[i]) && isFinished[cols[j]]; j++) {
+      entryFunc(i, j);
+    }
+    next[i] = j;
+    if (j == diag[i]) {
+      finishFunc(i);
+    }
+  };
+
+  // Mark row i as finished and add the rows waiting for it to a list,
+  // unless they were already released in this step
+  auto releaseRows = [&](const int i, int *list, int *numList, long *work) {
+    isFinished[i] = 1;
+    for (int q = colp[i]; q < colp[i + 1]; q++) {
+      const int row = waitingRows[q];
+      if (lastStep[row] != step) {
+        lastStep[row] = step;
+        list[*numList] = row;
+        (*numList)++;
+        *work += blockWork * (workRowp[row + 1] - workRowp[row]);
+      }
+    }
+  };
+
+  while (numReady > 0) {
+    // Look ahead: while the rows that can finish hold little work, finish
+    // them on this thread and add the rows they release to this step. In
+    // a chain of rows that each wait for the previous one, the other rows
+    // of the step then process several blocks at once.
+    for (int look = 0; look < TACS_BCSR_LOOK_AHEAD; look++) {
+      int *finishing = nextReady;
+      int numFinishing = 0;
+      long finishingWork = 0;
+      for (int p = 0; p < numReady; p++) {
+        const int i = ready[p];
+        int j = next[i];
+        while ((j < diag[i]) && isFinished[cols[j]]) {
+          j++;
+        }
+        if (!isFinished[i] && j == diag[i]) {
+          finishing[numFinishing] = i;
+          numFinishing++;
+          finishingWork += blockWork * (workRowp[i + 1] - workRowp[i]);
+        }
+      }
+      if (numFinishing == 0 || finishingWork >= TACS_BCSR_MIN_PARALLEL_WORK) {
+        break;
+      }
+
+      for (int p = 0; p < numFinishing; p++) {
+        advanceRow(finishing[p]);
+      }
+      readyWork -= finishingWork;
+      for (int p = 0; p < numFinishing; p++) {
+        releaseRows(finishing[p], ready, &numReady, &readyWork);
+      }
+    }
+
+    const int chunk = 1 + numReady / (TACS_BCSR_CHUNKS_PER_THREAD * numThreads);
+    const int isParallel = (readyWork >= TACS_BCSR_MIN_PARALLEL_WORK);
+
+#pragma omp parallel for num_threads(numThreads) \
+    schedule(dynamic, chunk) if (isParallel)
+    for (int p = 0; p < numReady; p++) {
+      if (!isFinished[ready[p]]) {
+        advanceRow(ready[p]);
+      }
+    }
+
+    // Release the rows waiting for the rows that finished. isFinished only
+    // changes outside of the parallel loop.
+    step++;
+    int numReleased = 0;
+    readyWork = 0;
+    for (int p = 0; p < numReady; p++) {
+      const int i = ready[p];
+      if (!isFinished[i] && next[i] == diag[i]) {
+        releaseRows(i, nextReady, &numReleased, &readyWork);
+      }
+    }
+
+    int *released = nextReady;
+    nextReady = ready;
+    ready = released;
+    numReady = numReleased;
+  }
+
+  delete[] next;
+  delete[] isFinished;
+  delete[] lastStep;
+  delete[] ready;
+  delete[] nextReady;
 }
 
 // ==============================================================================
@@ -406,21 +630,18 @@ static TACS_BCSR_INLINE void blockUpperSolveRow(
  * @brief Compute one block row of a lower-triangular solve
  *
  * Subtract from rhs the products with y of the strictly lower blocks of row
- * i whose columns are in [jStart, jEnd), and store the result in yRow.
+ * i, and store the result in yRow.
  *
  * @tparam N Block size
  * @param data Factored BCSR matrix data
  * @param i Block row
- * @param jStart First column to include
- * @param jEnd One past the last column to include
  * @param y Solution vector
  * @param rhs Right-hand side for this row (N entries)
  * @param yRow Output for this row (N entries); may be the same array as rhs
  */
 template <int N>
 static TACS_BCSR_INLINE void blockLowerSolveRow(const BCSRMatData *data,
-                                                const int i, const int jStart,
-                                                const int jEnd,
+                                                const int i,
                                                 const TacsScalar *y,
                                                 const TacsScalar *rhs,
                                                 TacsScalar *yRow) {
@@ -433,13 +654,7 @@ static TACS_BCSR_INLINE void blockLowerSolveRow(const BCSRMatData *data,
   }
 
   const int end = data->diag[i];
-  int k = data->rowp[i];
-  while ((k < end) && (cols[k] < jStart)) {
-    k++;
-  }
-
-  const int first = k;
-  for (; (k < end) && (cols[k] < jEnd); k++) {
+  for (int k = data->rowp[i]; k < end; k++) {
     blockMultSub<N>(&A[N * N * k], &y[N * cols[k]], acc);
   }
 
@@ -447,8 +662,7 @@ static TACS_BCSR_INLINE void blockLowerSolveRow(const BCSRMatData *data,
     yRow[n] = acc[n];
   }
 
-  TacsAddFlops(2 * N * N * (k - first));
-  (void)first;
+  TacsAddFlops(2 * N * N * (end - data->rowp[i]));
 }
 
 /**
@@ -463,7 +677,7 @@ template <int N>
 void BCSRBlockMatApplyLower(BCSRMatData *data, TacsScalar *x, TacsScalar *y) {
   const int nrows = data->nrows;
   for (int i = 0; i < nrows; i++) {
-    blockLowerSolveRow<N>(data, i, 0, nrows, y, &x[N * i], &y[N * i]);
+    blockLowerSolveRow<N>(data, i, y, &x[N * i], &y[N * i]);
   }
 }
 
@@ -676,67 +890,61 @@ void BCSRBlockMatApplySOR(BCSRMatData *Adata, BCSRMatData *Bdata,
 // ==============================================================================
 
 /**
- * @brief Eliminate part of one block row of the ILU factorization
+ * @brief Eliminate one block below the diagonal in the ILU factorization
  *
- * For each block (row, j) with j in [low, high) and j < row, form the
- * multiplier L(row, j) = A(row, j) * U(j, j)^{-1}, store it, and subtract
- * its products with the blocks of row j past the diagonal from row `row`.
- * When high - 1 == row the row is complete and its diagonal block is
- * replaced by its inverse.
+ * For the block at index j of row `row`, in column cj < row, form the
+ * multiplier L(row, cj) = A(row, cj) * U(cj, cj)^{-1}, store it, and
+ * subtract its products with the blocks of row cj past the diagonal from
+ * row `row`.
  *
  * @tparam N Block size
- * @param data BCSR matrix data, whose rows [low, high) below `row` are
- * already factored
+ * @param data BCSR matrix data, whose row cj is already factored
  * @param row Block row to eliminate
- * @param low First column to eliminate
- * @param high One past the last column to eliminate
+ * @param j Index into cols of the block to eliminate
  */
 template <int N>
-static TACS_BCSR_INLINE void blockFactorRow(BCSRMatData *data, const int row,
-                                            const int low, const int high) {
+static TACS_BCSR_INLINE void blockFactorEntry(BCSRMatData *data, const int row,
+                                              const int j) {
   const int *rowp = data->rowp;
   const int *cols = data->cols;
   const int *diag = data->diag;
   TacsScalar *A = data->A;
+  const int cj = cols[j];
 
-  // Scan from the first entry in the range towards the diagonal
-  const int rowEnd = rowp[row + 1];
-  int j = rowp[row];
-  while ((j < rowEnd) && (cols[j] < low)) {
-    j++;
-  }
+  // Form the multiplier d = A[j] * A[diag[cj]] in a local, so that no
+  // store to the matrix can alias it, and write it back to the row
+  TacsScalar d[N * N];
+  blockMatMult<N>(&A[N * N * j], &A[N * N * diag[cj]], d);
+  memcpy(&A[N * N * j], d, sizeof(d));
 
-  for (; (cols[j] < high) && (cols[j] < row); j++) {
-    const int cj = cols[j];
+  // A[k] = A[k] - d * A[p] for the blocks past the diagonal of row cj
+  const int nz = blockRowUpdate<N>(d, cols, A, diag[cj] + 1, rowp[cj + 1], cols,
+                                   A, j + 1, rowp[row + 1]);
 
-    // Form the multiplier d = A[j] * A[diag[cj]] in a local, so that no
-    // store to the matrix can alias it, and write it back to the row
-    TacsScalar d[N * N];
-    blockMatMult<N>(&A[N * N * j], &A[N * N * diag[cj]], d);
-    memcpy(&A[N * N * j], d, sizeof(d));
+  TacsAddFlops(2 * N * N * N * nz + (2 * N - 1) * N * N);
+  (void)nz;
+}
 
-    // A[k] = A[k] - d * A[p] for the blocks past the diagonal of row cj
-    const int nz = blockRowUpdate<N>(d, cols, A, diag[cj] + 1, rowp[cj + 1],
-                                     cols, A, j + 1, rowEnd);
+/**
+ * @brief Replace the diagonal block of a row by its inverse
+ *
+ * @tparam N Block size
+ * @param data BCSR matrix data
+ * @param row Block row whose blocks below the diagonal are eliminated
+ */
+template <int N>
+static TACS_BCSR_INLINE void blockFactorDiag(BCSRMatData *data, const int row) {
+  TacsScalar D[N * N];
+  TacsScalar *a = &data->A[N * N * data->diag[row]];
+  memcpy(D, a, sizeof(D));
 
-    TacsAddFlops(2 * N * N * N * nz + (2 * N - 1) * N * N);
-    (void)nz;
-  }
-
-  if (high - 1 == row) {
-    // Invert the diagonal block
-    TacsScalar D[N * N];
-    TacsScalar *a = &A[N * N * diag[row]];
-    memcpy(D, a, sizeof(D));
-
-    int ipiv[N];
-    const int info = BMatComputeInverse(a, D, ipiv, N);
-    if (info > 0) {
-      fprintf(stderr,
-              "Error during factorization of diagonal %d in \
+  int ipiv[N];
+  const int info = BMatComputeInverse(a, D, ipiv, N);
+  if (info > 0) {
+    fprintf(stderr,
+            "Error during factorization of diagonal %d in \
 block row %d \n",
-              row + 1, info);
-    }
+            row + 1, info);
   }
 }
 
@@ -761,8 +969,22 @@ void BCSRBlockMatFactor(BCSRMatData *data) {
               i);
       return;
     }
+  }
 
-    blockFactorRow<N>(data, i, 0, i + 1);
+  if (BCSRIsLowerLoopThreaded(data, data)) {
+    BCSRForEachLowerBlockThreaded(
+        data, data,
+        [=](const int i, const int j) { blockFactorEntry<N>(data, i, j); },
+        [=](const int i) { blockFactorDiag<N>(data, i); });
+  } else {
+    const int *rowp = data->rowp;
+    const int *diag = data->diag;
+    for (int i = 0; i < nrows; i++) {
+      for (int j = rowp[i]; j < diag[i]; j++) {
+        blockFactorEntry<N>(data, i, j);
+      }
+      blockFactorDiag<N>(data, i);
+    }
   }
 
   // Add flops from the diagonal inversion
@@ -770,48 +992,34 @@ void BCSRBlockMatFactor(BCSRMatData *data) {
 }
 
 /**
- * @brief Compute part of one block row of E <- L^{-1} E
+ * @brief Apply one block of L to a row in E <- L^{-1} E
  *
- * For each strictly lower block (row, j) of the factored matrix with j in
- * [low, high), subtract its products with row j of E from row `row` of E.
+ * For the strictly lower block at index j of row `row` of the factored
+ * matrix, in column cj, subtract its products with row cj of E from row
+ * `row` of E.
  *
  * @tparam N Block size
  * @param data Factored BCSR matrix data
- * @param Edata Matrix to update
+ * @param Edata Matrix to update, whose row cj is already complete
  * @param row Block row to update
- * @param low First column of L to include
- * @param high One past the last column of L to include
+ * @param j Index into the cols of data of the block of L
  */
 template <int N>
-static TACS_BCSR_INLINE void blockFactorLowerRow(const BCSRMatData *data,
-                                                 BCSRMatData *Edata,
-                                                 const int row, const int low,
-                                                 const int high) {
-  const int *cols = data->cols;
-  const TacsScalar *A = data->A;
-
+static TACS_BCSR_INLINE void blockFactorLowerEntry(const BCSRMatData *data,
+                                                   BCSRMatData *Edata,
+                                                   const int row, const int j) {
   const int *erowp = Edata->rowp;
   const int *ecols = Edata->cols;
   TacsScalar *E = Edata->A;
+  const int cj = data->cols[j];
 
-  // Scan from the first entry in the range towards the diagonal
-  const int jEnd = data->diag[row];
-  int j = data->rowp[row];
-  while ((j < jEnd) && (cols[j] < low)) {
-    j++;
-  }
+  // E[row, :] = E[row, :] - A[j] * E[cj, :]
+  const int nz =
+      blockRowUpdate<N>(&data->A[N * N * j], ecols, E, erowp[cj], erowp[cj + 1],
+                        ecols, E, erowp[row], erowp[row + 1]);
 
-  for (; (j < jEnd) && (cols[j] < high); j++) {
-    const int cj = cols[j];
-
-    // E[row, :] = E[row, :] - A[j] * E[cj, :]
-    const int nz =
-        blockRowUpdate<N>(&A[N * N * j], ecols, E, erowp[cj], erowp[cj + 1],
-                          ecols, E, erowp[row], erowp[row + 1]);
-
-    TacsAddFlops(2 * N * N * N * nz);
-    (void)nz;
-  }
+  TacsAddFlops(2 * N * N * N * nz);
+  (void)nz;
 }
 
 /**
@@ -823,9 +1031,21 @@ static TACS_BCSR_INLINE void blockFactorLowerRow(const BCSRMatData *data,
  */
 template <int N>
 void BCSRBlockMatFactorLower(BCSRMatData *data, BCSRMatData *Edata) {
-  const int nrows = data->nrows;
-  for (int i = 0; i < nrows; i++) {
-    blockFactorLowerRow<N>(data, Edata, i, 0, nrows);
+  if (BCSRIsLowerLoopThreaded(data, Edata)) {
+    BCSRForEachLowerBlockThreaded(
+        data, Edata,
+        [=](const int i, const int j) {
+          blockFactorLowerEntry<N>(data, Edata, i, j);
+        },
+        [](const int) {});
+  } else {
+    const int *rowp = data->rowp;
+    const int *diag = data->diag;
+    for (int i = 0; i < data->nrows; i++) {
+      for (int j = rowp[i]; j < diag[i]; j++) {
+        blockFactorLowerEntry<N>(data, Edata, i, j);
+      }
+    }
   }
 }
 
@@ -878,6 +1098,10 @@ static TACS_BCSR_INLINE void blockFactorUpperRow(const BCSRMatData *data,
 template <int N>
 void BCSRBlockMatFactorUpper(BCSRMatData *data, BCSRMatData *Fdata) {
   const int nrows_f = Fdata->nrows;
+  const int numThreads = data->num_threads;
+  const int chunk = 1 + nrows_f / (TACS_BCSR_CHUNKS_PER_THREAD * numThreads);
+
+#pragma omp parallel for num_threads(numThreads) schedule(dynamic, chunk)
   for (int i = 0; i < nrows_f; i++) {
     blockFactorUpperRow<N>(data, Fdata, i);
   }
@@ -956,6 +1180,10 @@ template <int N>
 void BCSRBlockMatMatMultAdd(double alpha, BCSRMatData *Adata,
                             BCSRMatData *Bdata, BCSRMatData *Cdata) {
   const int nrows_a = Adata->nrows;
+  const int numThreads = Cdata->num_threads;
+  const int chunk = 1 + nrows_a / (TACS_BCSR_CHUNKS_PER_THREAD * numThreads);
+
+#pragma omp parallel for num_threads(numThreads) schedule(dynamic, chunk)
   for (int i = 0; i < nrows_a; i++) {
     blockMatMultAddRow<N>(alpha, Adata, Bdata, Cdata, i);
   }
@@ -1027,266 +1255,6 @@ void BCSRBlockMatMatMultNormal(BCSRMatData *Adata, TacsScalar *scale,
   }
 
   delete[] kptr;
-}
-
-// ==============================================================================
-// Threaded kernels
-// ==============================================================================
-
-/*
-  Each threaded kernel is a pthread start routine that takes a
-  BCSRMatThread, asks its scheduler for rows until none are left, and
-  applies the same per-row operation as the serial kernel to them.
-*/
-
-/**
- * @brief Threaded matrix-vector product: output += A * input
- *
- * @tparam N Block size
- * @param t The BCSRMatThread data
- */
-template <int N>
-void *BCSRBlockMatVecMultAdd_thread(void *t) {
-  BCSRMatThread *tdata = static_cast<BCSRMatThread *>(t);
-  const BCSRMatData *data = tdata->mat;
-  const int nrows = data->nrows;
-  const int *rowp = data->rowp;
-  const int *cols = data->cols;
-  const TacsScalar *A = data->A;
-  const int group_size = data->matvec_group_size;
-
-  const TacsScalar *x = tdata->input;
-  TacsScalar *y = tdata->output;
-
-  while (tdata->num_completed_rows < nrows) {
-    int row = -1;
-    tdata->mat_mult_sched_job(group_size, &row);
-
-    if (row >= 0) {
-      for (int i = row; (i < nrows) && (i < row + group_size); i++) {
-        TacsScalar sums[N];
-        for (int n = 0; n < N; n++) {
-          sums[n] = y[N * i + n];
-        }
-
-        const int end = rowp[i + 1];
-        for (int k = rowp[i]; k < end; k++) {
-          blockMultAdd<N>(&A[N * N * k], &x[N * cols[k]], sums);
-        }
-
-        for (int n = 0; n < N; n++) {
-          y[N * i + n] = sums[n];
-        }
-      }
-    }
-  }
-
-  pthread_exit(NULL);
-}
-
-/**
- * @brief Threaded lower-triangular solve: output <- L^{-1} output
- *
- * Each job applies the columns [jstart, jend) of L to a group of rows.
- *
- * @tparam N Block size
- * @param t The BCSRMatThread data
- */
-template <int N>
-void *BCSRBlockMatApplyLower_thread(void *t) {
-  BCSRMatThread *tdata = static_cast<BCSRMatThread *>(t);
-  const BCSRMatData *data = tdata->mat;
-  const int nrows = data->nrows;
-  const int group_size = data->matvec_group_size;
-  TacsScalar *y = tdata->output;
-
-  while (tdata->num_completed_rows < nrows) {
-    int index, irow, jstart, jend;
-    tdata->apply_lower_sched_job(group_size, &index, &irow, &jstart, &jend);
-
-    if (irow >= 0) {
-      for (int i = irow; (i < nrows) && (i < irow + group_size); i++) {
-        blockLowerSolveRow<N>(data, i, jstart, jend, y, &y[N * i], &y[N * i]);
-      }
-
-      tdata->apply_lower_mark_completed(group_size, index, irow, jstart, jend);
-    }
-  }
-
-  pthread_exit(NULL);
-}
-
-/**
- * @brief Threaded upper-triangular solve: output <- U^{-1} output
- *
- * Each job applies the columns [jstart, jend) of U to a group of rows, and
- * the inverse of the diagonal blocks once a group's own columns are
- * reached.
- *
- * @tparam N Block size
- * @param t The BCSRMatThread data
- */
-template <int N>
-void *BCSRBlockMatApplyUpper_thread(void *t) {
-  BCSRMatThread *tdata = static_cast<BCSRMatThread *>(t);
-  const BCSRMatData *data = tdata->mat;
-  const int nrows = data->nrows;
-  const int *rowp = data->rowp;
-  const int *cols = data->cols;
-  const int *diag = data->diag;
-  const TacsScalar *A = data->A;
-  const int group_size = data->matvec_group_size;
-  TacsScalar *y = tdata->output;
-
-  while (tdata->num_completed_rows < nrows) {
-    int index, irow, jstart, jend;
-    tdata->apply_upper_sched_job(group_size, &index, &irow, &jstart, &jend);
-
-    if (irow >= 0) {
-      for (int i = irow - 1; (i >= 0) && (i >= irow - group_size); i--) {
-        const int start = diag[i] + 1;
-        int k = rowp[i + 1] - 1;
-        while ((k >= start) && (cols[k] >= jend)) {
-          k--;
-        }
-
-        TacsScalar *yRow = &y[N * i];
-        TacsScalar acc[N];
-        for (int n = 0; n < N; n++) {
-          acc[n] = yRow[n];
-        }
-
-        for (; (k >= start) && (cols[k] >= jstart); k--) {
-          blockMultSub<N>(&A[N * N * k], &y[N * cols[k]], acc);
-        }
-
-        if (irow == jstart + group_size) {
-          // Apply the inverse of the diagonal block
-          blockMult<N>(&A[N * N * diag[i]], acc, yRow);
-        } else {
-          for (int n = 0; n < N; n++) {
-            yRow[n] = acc[n];
-          }
-        }
-      }
-
-      tdata->apply_upper_mark_completed(group_size, index, irow, jstart, jend);
-    }
-  }
-
-  pthread_exit(NULL);
-}
-
-/**
- * @brief Threaded ILU factorization of tdata->mat in place
- *
- * @tparam N Block size
- * @param t The BCSRMatThread data
- */
-template <int N>
-void *BCSRBlockMatFactor_thread(void *t) {
-  BCSRMatThread *tdata = static_cast<BCSRMatThread *>(t);
-  BCSRMatData *data = tdata->mat;
-  const int nrows = data->nrows;
-  const int group_size = 1;
-
-  while (tdata->num_completed_rows < nrows) {
-    int index, row, low, high;
-    tdata->apply_lower_sched_job(group_size, &index, &row, &low, &high);
-
-    if (row >= 0) {
-      if (data->diag[row] < 0) {
-        fprintf(stderr, "Error in factorization: no diagonal entry for row %d",
-                row);
-        pthread_exit(NULL);
-      }
-
-      blockFactorRow<N>(data, row, low, high);
-
-      tdata->apply_lower_mark_completed(group_size, index, row, low, high);
-    }
-  }
-
-  pthread_exit(NULL);
-}
-
-/**
- * @brief Threaded E <- L^{-1} E, with L from tdata->mat and E = tdata->Amat
- *
- * @tparam N Block size
- * @param t The BCSRMatThread data
- */
-template <int N>
-void *BCSRBlockMatFactorLower_thread(void *t) {
-  BCSRMatThread *tdata = static_cast<BCSRMatThread *>(t);
-  const int nrows = tdata->mat->nrows;
-  const int group_size = 1;
-
-  while (tdata->num_completed_rows < nrows) {
-    int index, row, low, high;
-    tdata->apply_lower_sched_job(group_size, &index, &row, &low, &high);
-
-    if (row >= 0) {
-      blockFactorLowerRow<N>(tdata->mat, tdata->Amat, row, low, high);
-
-      tdata->apply_lower_mark_completed(group_size, index, row, low, high);
-    }
-  }
-
-  pthread_exit(NULL);
-}
-
-/**
- * @brief Threaded F <- F U^{-1}, with U from tdata->mat and F = tdata->Amat
- *
- * @tparam N Block size
- * @param t The BCSRMatThread data
- */
-template <int N>
-void *BCSRBlockMatFactorUpper_thread(void *t) {
-  BCSRMatThread *tdata = static_cast<BCSRMatThread *>(t);
-  const int nrows_f = tdata->Amat->nrows;
-  const int group_size = 1;
-
-  while (tdata->num_completed_rows < nrows_f) {
-    int row = -1;
-    tdata->mat_mult_sched_job_size(group_size, &row, nrows_f);
-
-    if (row >= 0) {
-      blockFactorUpperRow<N>(tdata->mat, tdata->Amat, row);
-    }
-  }
-
-  pthread_exit(NULL);
-}
-
-/**
- * @brief Threaded C += alpha * A * B, with C = tdata->mat
- *
- * @tparam N Block size
- * @param t The BCSRMatThread data
- */
-template <int N>
-void *BCSRBlockMatMatMultAdd_thread(void *t) {
-  BCSRMatThread *tdata = static_cast<BCSRMatThread *>(t);
-  const int nrows_a = tdata->Amat->nrows;
-  const int nrows_c = tdata->mat->nrows;
-  const int group_size = tdata->mat->matmat_group_size;
-
-  while (tdata->num_completed_rows < nrows_c) {
-    int row = -1;
-    tdata->mat_mult_sched_job(group_size, &row);
-    if (row < 0) {
-      break;
-    }
-
-    for (int i = row; (i < nrows_a) && (i < row + group_size); i++) {
-      blockMatMultAddRow<N>(tdata->alpha, tdata->Amat, tdata->Bmat, tdata->mat,
-                            i);
-    }
-  }
-
-  pthread_exit(NULL);
 }
 
 #endif  // TACS_BCSR_MAT_BLOCK_IMPLEMENTATION_H

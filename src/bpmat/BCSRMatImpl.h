@@ -22,11 +22,23 @@
 /*
   Implementations of the various block-specific operations
 */
-#include <pthread.h>
-
 #include <math.h>  // fabs
 
 #include "TACSObject.h"
+
+/*
+  For each column, the rows that have a block below the diagonal in that
+  column: the transpose of the strictly lower non-zero pattern. These are
+  the rows that wait for a given row in the factorization.
+*/
+class BCSRMatColumnRows {
+ public:
+  BCSRMatColumnRows(int nrows, const int *rowp, const int *cols);
+  ~BCSRMatColumnRows();
+
+  int *colp;  // A pointer into rows for the start of each column
+  int *rows;  // The rows i > j with a block in column j, in increasing order
+};
 
 class BCSRMatData : public TACSObject {
  public:
@@ -41,69 +53,27 @@ class BCSRMatData : public TACSObject {
   int *rowp;  // A pointer into cols for the start of each row
   int *cols;  // The column number of each variable
 
-  // Information about the size of groups to use
-  int matvec_group_size;  // The size of groups for mat-vec operations
-  int matmat_group_size;  // The size of groups for mat-mat operations
+  // The number of threads the kernels may use on this matrix. BCSRMat sets
+  // this before each call; it has no effect without OpenMP.
+  int num_threads;
 
   // The storage space for each block - this can change
   TacsScalar *A;  // The vector of elements of each block
-};
 
-class BCSRMatThread : public TACSObject {
- public:
-  BCSRMatThread(BCSRMatData *_mat);
-  ~BCSRMatThread();
+  // The rows below the diagonal of each column, created on first use by
+  // the threaded factorization. Call this outside of a parallel region.
+  const BCSRMatColumnRows *getLowerColumnRows();
 
-  // The scheduling functions
-  // ------------------------
-  // Matrix-matrix and matrix-vector product scheduler
-  void init_mat_mult_sched();
-  void mat_mult_sched_job(const int group_size, int *row);
-  void mat_mult_sched_job_size(const int group_size, int *row, const int nrows);
-
-  // Scheduler for L^{-1} applications
-  void init_apply_lower_sched();
-  void apply_lower_sched_job(const int group_size, int *index, int *irow,
-                             int *jstart, int *jend);
-  void apply_lower_mark_completed(const int group_size, int index, int irow,
-                                  int jstart, int jend);
-
-  // Scheduler for U^{-1} appilcations
-  void init_apply_upper_sched();
-  void apply_upper_sched_job(const int group_size, int *index, int *irow,
-                             int *jstart, int *jend);
-  void apply_upper_mark_completed(const int group_size, int index, int irow,
-                                  int jstart, int jend);
-
-  pthread_t threads[TACSThreadInfo::TACS_MAX_NUM_THREADS];
-
-  // The input/output when dealing with vectors
-  TacsScalar *input, *output;
-
-  // BCSRMatData to be operated on by the threaded-implementation
-  BCSRMatData *mat;
-
-  // Data required for matrix-matrix products
-  double alpha;
-  BCSRMatData *Amat;
-  BCSRMatData *Bmat;
-
-  // The number of completed rows in the implementation
-  int num_completed_rows;
-
-  // Compute the row index size
-  int *assigned_row_index;   // The index of the fully assigned rows
-  int *completed_row_index;  // The indices of the full assigned columns
-
-  // The threaded implementation
-  pthread_mutex_t mutex;
-  pthread_cond_t cond;
+ private:
+  BCSRMatColumnRows *lower_column_rows;
 };
 
 #if defined(__GNUC__)
 #define TACS_BCSR_INLINE inline __attribute__((always_inline))
+#define TACS_BCSR_NOINLINE __attribute__((noinline))
 #else
 #define TACS_BCSR_INLINE inline
+#define TACS_BCSR_NOINLINE
 #endif
 
 /*!
@@ -119,7 +89,8 @@ class BCSRMatThread : public TACSObject {
 
   Returns 0 on success, or k + 1 if the k-th pivot is zero.
 */
-TACS_BCSR_INLINE int BMatComputeInverse(TacsScalar *Ainv, TacsScalar *A, int *ipiv, int n) {
+TACS_BCSR_INLINE int BMatComputeInverse(TacsScalar *Ainv, TacsScalar *A,
+                                        int *ipiv, int n) {
   int fail = 0;
 
   for (int k = 0; k < n - 1; k++) {

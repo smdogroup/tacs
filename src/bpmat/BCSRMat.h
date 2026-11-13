@@ -22,7 +22,6 @@
 #include "BCSRMatImpl.h"
 #include "KSM.h"
 #include "TACSObject.h"
-#include "pthread.h"
 
 /*!
   Block Compressed Sparse Row format matrix.
@@ -150,8 +149,6 @@ class BCSRMat : public TACSObject {
   // Select the kernels templated on the block size
   template <int N>
   void setBlockImpl();
-  template <int N>
-  void setBlockThreadImpl();
 
   void setUpDiag();  // Set up the diagonal entry pointer 'diag'
   void computeILUk(BCSRMat *mat, int levFill, double fill, int **_levs);
@@ -184,15 +181,6 @@ class BCSRMat : public TACSObject {
   void (*bfactorupper)(BCSRMatData *A, BCSRMatData *F);
   void (*bmatmatmultnormal)(BCSRMatData *A, TacsScalar *s, BCSRMatData *B);
 
-  // The thread-specific implementations
-  void *(*bmultadd_thread)(void *);
-  void *(*bfactor_thread)(void *);
-  void *(*applylower_thread)(void *);
-  void *(*applyupper_thread)(void *);
-  void *(*bmatmult_thread)(void *);
-  void *(*bfactorlower_thread)(void *);
-  void *(*bfactorupper_thread)(void *);
-
   // The MPI communicator - this is useful for output
   MPI_Comm comm;
 
@@ -201,9 +189,6 @@ class BCSRMat : public TACSObject {
 
   // The matrix BCSR data
   BCSRMatData *data;
-
-  // The threaded BCSR matrix data
-  BCSRMatThread *tdata;
 
   // Storage space for the factored diagonal entries
   TacsScalar *Adiag;
