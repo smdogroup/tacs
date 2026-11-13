@@ -98,11 +98,11 @@ class TacsBuckling(om.ExplicitComponent):
             self._update_internal(inputs)
 
             for func_name in d_outputs:
-                d_func = d_outputs[func_name]
+                d_func = d_outputs[func_name].item()
                 eig_name = func_name.replace("_", ".")
                 mode_i = self.bp.functionList[eig_name]
 
-                if d_func[0] != 0.0:
+                if d_func != 0.0:
                     if "tacs_dvs" in d_inputs:
                         self.bp.addDVSens(
                             [mode_i], [d_inputs["tacs_dvs"]], scale=d_func
