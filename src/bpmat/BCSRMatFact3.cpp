@@ -134,9 +134,9 @@ row %d \n",
 
     if (info > 0) {
       fprintf(stderr,
-              "Error during factorization of diagonal block %d \
-in row %d \n",
-              i + 1, info);
+              "Error during factorization: zero pivot %d in the diagonal "
+              "block of block row %d\n",
+              info, i + 1);
     }
   }
 }
