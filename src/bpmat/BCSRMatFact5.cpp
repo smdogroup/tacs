@@ -257,9 +257,9 @@ void BCSRMatFactor5(BCSRMatData *data) {
 
     if (info > 0) {
       fprintf(stderr,
-              "Error during factorization of diagonal %d in \
-block row %d \n",
-              i + 1, info);
+              "Error during factorization: zero pivot %d in the diagonal "
+              "block of block row %d\n",
+              info, i + 1);
     }
   }
 }

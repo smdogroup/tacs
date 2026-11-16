@@ -1217,7 +1217,9 @@ void TACSIntegrator::initializeLinearSolver() {
   }
 
   // ksm->setMonitor(new KSMPrintStdout("GMRES", 0, 1));
-  ksm->setTolerances(0.1 * rtol, 1.0e-30);
+  // GMRES has no breakdown check, so its tolerance must be reachable: past
+  // convergence its Arnoldi vectors are round-off and the update can blow up.
+  ksm->setTolerances(fmax(0.1 * rtol, 1.0e-14), 1.0e-30);
 
   // Set the global variable to initialize linear solver
   linear_solver_initialized = 1;

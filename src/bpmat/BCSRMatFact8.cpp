@@ -622,10 +622,10 @@ void *BCSRMatFactor8_thread(void *t) {
         int info = BMatComputeInverse(a, D, ipiv, 8);
 
         if (info > 0) {
-          fprintf(
-              stderr,
-              "Error during factorization of diagonal %d in block row %d \n",
-              row + 1, info);
+          fprintf(stderr,
+                  "Error during factorization: zero pivot %d in the diagonal "
+                  "block of block row %d\n",
+                  info, row + 1);
         }
       }
 
@@ -2020,8 +2020,9 @@ void BCSRMatFactor8(BCSRMatData *data) {
 
     if (info > 0) {
       fprintf(stderr,
-              "Error during factorization of diagonal %d in block row %d \n",
-              i + 1, info);
+              "Error during factorization: zero pivot %d in the diagonal "
+              "block of block row %d\n",
+              info, i + 1);
     }
   }
 
