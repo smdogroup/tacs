@@ -244,6 +244,26 @@ TacsScalar EPBucklingShiftInvert::convertEigenvalue(TacsScalar value) {
 }
 
 /*
+  The shift-invert transform above has a pole at value == 1 . i.e an eigenvalue
+  of 1 in the shifted problem corresponds to a buckling load factor of lambda =
+  +- infinity. These eigenvalues can show up in some cases (e.g in-plan modes of
+  a flat plate) but should not be selected.
+
+  In real mode, value = 1 gives lambda = +- infinity, so these modes are
+  naturally sorted out of the selected modes. However, in complex mode, value =
+  1 + eps*i gives lambda = sigma + sigma/(eps*i), a finite value whose real part
+  is exactly sigma, which sorts ahead of every finite eigenvalue.
+
+  We therefore need a cutoff to explicitly catch eigenvalues close to the pole.
+  The cutoff need only catch a denominator that is zero to working precision;
+  1e-12 rejects |lambda| >= 1e12*sigma.
+*/
+int EPBucklingShiftInvert::isFiniteEigenvalue(TacsScalar value) {
+  const double pole_tol = 1e-12;
+  return fabs(1.0 - TacsRealPart(value)) > pole_tol;
+}
+
+/*
   Compute the eigenvalues and eigenvectors of a symmetric tridiagonal
   matrix.
 
@@ -689,11 +709,26 @@ void SEP::printOrthogonality() {
   ordering - this is required so that the corresponding eigenvectors
   match. The permutation array is altered so that the array indexed by
   p[i] => eigs[ p[i] ] is sorted in ascending order.
+
+  Poles of the spectral transform - images of infinite eigenvalues, which are
+  not solutions - are partitioned to the end of p and left unsorted.
+
+  Returns the number of finite eigenvalues, i.e. the length of the sorted
+  front block of p.
 */
-void SEP::sortEigenvalues(TacsScalar *values, int neigs, int *p) {
-  // The default ordering
+int SEP::sortEigenvalues(TacsScalar *values, int neigs, int *p) {
+  // Partition in one pass: finite eigenvalues at the front, poles of the
+  // spectral transform at the back. Only the front block is sorted.
+  int nfinite = 0;
+  int npole = neigs - 1;
   for (int i = 0; i < neigs; i++) {
-    p[i] = i;
+    if (Op->isFiniteEigenvalue(values[i])) {
+      p[nfinite] = i;
+      nfinite++;
+    } else {
+      p[npole] = i;
+      npole--;
+    }
   }
 
   // Set the flags based on the sorting criteria: Use absolute value
@@ -703,11 +738,14 @@ void SEP::sortEigenvalues(TacsScalar *values, int neigs, int *p) {
       (spectrum == SMALLEST_MAGNITUDE || spectrum == LARGEST_MAGNITUDE);
   int sort_ascending = (spectrum == SMALLEST_MAGNITUDE || spectrum == SMALLEST);
 
-  // Sort the array using insertion sort
-  for (int i = 0; i < neigs; i++) {
+  // Sort the physical eigenvalues using insertion sort
+  for (int i = 1; i < nfinite; i++) {
+    // Must be read from p[i]: the partition means p is no longer the identity.
+    int key = p[i];
+
     // Convert the transformed eigenvalue into the correct
     // range
-    TacsScalar eig_new = Op->convertEigenvalue(values[p[i]]);
+    TacsScalar eig_new = Op->convertEigenvalue(values[key]);
 
     // Take the absolute value of the eigenvalue
     if (use_abs) {
@@ -741,8 +779,10 @@ void SEP::sortEigenvalues(TacsScalar *values, int neigs, int *p) {
     }
 
     // Place the index in the sorted array
-    p[j + 1] = i;
+    p[j + 1] = key;
   }
+
+  return nfinite;
 }
 
 /*!
@@ -765,7 +805,14 @@ int SEP::checkConverged(TacsScalar *A, TacsScalar *B, int n) {
 
   // Find the permutation which sorts the matrix in the desired
   // order
-  sortEigenvalues(eigs, n, perm);
+  int nfinite = sortEigenvalues(eigs, n, perm);
+
+  // Poles sit at the back of perm, so with fewer finite Ritz values than
+  // requested the loop below would test poles. Their error estimates are tiny,
+  // so they would pass and later be extracted as eigenvalues.
+  if (nfinite < neigvals) {
+    return 0;
+  }
 
   // Check for convergence of each of the desired eigenvalues
   int is_converged = 1;
