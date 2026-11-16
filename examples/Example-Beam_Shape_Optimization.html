@@ -10,9 +10,9 @@
     <link rel="stylesheet" type="text/css" href="../_static/sphinxdoc.css?v=34905f61" />
     <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
     <script src="../_static/documentation_options.js?v=d048f138"></script>
-    <script src="../_static/doctools.js?v=9bcbadda"></script>
-    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
-    <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-mml-chtml.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="Theory" href="../theory/theory.html" />
@@ -71,7 +71,7 @@ parameterization scheme provided by the <a class="reference external" href="http
 TACS <a class="reference internal" href="../mach/mach.html#mach"><span class="std std-ref">MACH</span></a> module is used to link the static problem with pyGeo's FFD volume parameterization.</p>
 <p>The figure below shows the initial (unoptimized) beam with the von Mises failure contour and
 the FFD box with its control points encapsulating the structure:</p>
-<a class="reference internal image-reference" href="../_images/Beam_FFD.png"><img alt="Initial beam failure contour with FFD volume box and control points" src="../_images/Beam_FFD.png" style="width: 700px;" />
+<a class="reference internal image-reference" href="../_images/Beam_FFD.png"><img alt="Initial beam failure contour with FFD volume box and control points" src="../_images/Beam_FFD.png" width="700" />
 </a>
 <p>Each spanwise control point section will be parameterized in such a way that the depth of the beam can be optimized at each station.</p>
 <p>As was shown in <a class="reference internal" href="Example-Beam_Optimization.html#beam-optimization-with-mphys"><span class="std std-ref">Beam optimization with MPhys</span></a> example an analytic solution for the optimal spanwise depth profile can be derived and is given below:</p>
@@ -238,7 +238,7 @@ The stress constraint is added as a nonlinear inequality using the KS failure ag
 <p>The optimization minimizes the beam mass while keeping the KS failure index below 1.0.
 The converged depth profile decreases from root to tip, matching the analytical solution
 <span class="math notranslate nohighlight">\(d(x) = \sqrt{6V(L-x)/(t\,\sigma_y)}\)</span>.</p>
-<a class="reference internal image-reference" href="../_images/Beam_Shape_Opt.png"><img alt="Optimized beam failure contours with the idealized analytic depth profile overlaid" src="../_images/Beam_Shape_Opt.png" style="width: 700px;" />
+<a class="reference internal image-reference" href="../_images/Beam_Shape_Opt.png"><img alt="Optimized beam failure contours with the idealized analytic depth profile overlaid" src="../_images/Beam_Shape_Opt.png" width="700" />
 </a>
 </section>
 </section>

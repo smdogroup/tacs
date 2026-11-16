@@ -10,9 +10,9 @@
     <link rel="stylesheet" type="text/css" href="../_static/sphinxdoc.css?v=34905f61" />
     <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
     <script src="../_static/documentation_options.js?v=d048f138"></script>
-    <script src="../_static/doctools.js?v=9bcbadda"></script>
-    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
-    <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-mml-chtml.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="functions module" href="functions.html" />
@@ -52,52 +52,8 @@
 <p>Some <code class="xref py py-class docutils literal notranslate"><span class="pre">Element</span></code> classes are capable of running under different element parameterizations (number of nodes, connectivity, etc).
 These elements may require an <code class="xref py py-class docutils literal notranslate"><span class="pre">ElementBasis</span></code> class at setup. The following <code class="xref py py-class docutils literal notranslate"><span class="pre">ElementBasis</span></code> classes are available in TACS:</p>
 <dl class="py class" id="module-tacs.elements">
-<dt class="sig sig-object py" id="tacs.elements.LinearTetrahedralBasis">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tacs.elements.</span></span><span class="sig-name descname"><span class="pre">LinearTetrahedralBasis</span></span><a class="headerlink" href="#tacs.elements.LinearTetrahedralBasis" title="Link to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">ElementBasis</span></code></p>
-<p>Basis class for a linear tetrahedral 3D element.</p>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p><strong>numNodes</strong>: 4</p>
-</div>
-</dd></dl>
-
-<dl class="py class">
-<dt class="sig sig-object py" id="tacs.elements.QuadraticTetrahedralBasis">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tacs.elements.</span></span><span class="sig-name descname"><span class="pre">QuadraticTetrahedralBasis</span></span><a class="headerlink" href="#tacs.elements.QuadraticTetrahedralBasis" title="Link to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">ElementBasis</span></code></p>
-<p>Basis class for a quadratic tetrahedral 3D element.</p>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p><strong>numNodes</strong>: 10</p>
-</div>
-</dd></dl>
-
-<dl class="py class">
-<dt class="sig sig-object py" id="tacs.elements.LinearHexaBasis">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tacs.elements.</span></span><span class="sig-name descname"><span class="pre">LinearHexaBasis</span></span><a class="headerlink" href="#tacs.elements.LinearHexaBasis" title="Link to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">ElementBasis</span></code></p>
-<p>Basis class for a linear hexahedral 3D element.</p>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p><strong>numNodes</strong>: 8</p>
-</div>
-</dd></dl>
-
-<dl class="py class">
-<dt class="sig sig-object py" id="tacs.elements.QuadraticHexaBasis">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tacs.elements.</span></span><span class="sig-name descname"><span class="pre">QuadraticHexaBasis</span></span><a class="headerlink" href="#tacs.elements.QuadraticHexaBasis" title="Link to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">ElementBasis</span></code></p>
-<p>Basis class for a quadratic hexahedral 3D element.</p>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p><strong>numNodes</strong>: 27</p>
-</div>
-</dd></dl>
-
-<dl class="py class">
 <dt class="sig sig-object py" id="tacs.elements.CubicHexaBasis">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tacs.elements.</span></span><span class="sig-name descname"><span class="pre">CubicHexaBasis</span></span><a class="headerlink" href="#tacs.elements.CubicHexaBasis" title="Link to this definition">¶</a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">tacs.elements.</span></span><span class="sig-name descname"><span class="pre">CubicHexaBasis</span></span><a class="headerlink" href="#tacs.elements.CubicHexaBasis" title="Link to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">ElementBasis</span></code></p>
 <p>Basis class for a cubic hexahedral 3D element.</p>
 <div class="admonition note">
@@ -107,30 +63,8 @@ These elements may require an <code class="xref py py-class docutils literal not
 </dd></dl>
 
 <dl class="py class">
-<dt class="sig sig-object py" id="tacs.elements.LinearQuadBasis">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tacs.elements.</span></span><span class="sig-name descname"><span class="pre">LinearQuadBasis</span></span><a class="headerlink" href="#tacs.elements.LinearQuadBasis" title="Link to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">ElementBasis</span></code></p>
-<p>Basis class for a linear quad 2D element.</p>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p><strong>numNodes</strong>: 4</p>
-</div>
-</dd></dl>
-
-<dl class="py class">
-<dt class="sig sig-object py" id="tacs.elements.QuadraticQuadBasis">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tacs.elements.</span></span><span class="sig-name descname"><span class="pre">QuadraticQuadBasis</span></span><a class="headerlink" href="#tacs.elements.QuadraticQuadBasis" title="Link to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">ElementBasis</span></code></p>
-<p>Basis class for a quadratic quad 2D element.</p>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p><strong>numNodes</strong>: 9</p>
-</div>
-</dd></dl>
-
-<dl class="py class">
 <dt class="sig sig-object py" id="tacs.elements.CubicQuadBasis">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tacs.elements.</span></span><span class="sig-name descname"><span class="pre">CubicQuadBasis</span></span><a class="headerlink" href="#tacs.elements.CubicQuadBasis" title="Link to this definition">¶</a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">tacs.elements.</span></span><span class="sig-name descname"><span class="pre">CubicQuadBasis</span></span><a class="headerlink" href="#tacs.elements.CubicQuadBasis" title="Link to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">ElementBasis</span></code></p>
 <p>Basis class for a cubic quad 2D element.</p>
 <div class="admonition note">
@@ -140,8 +74,107 @@ These elements may require an <code class="xref py py-class docutils literal not
 </dd></dl>
 
 <dl class="py class">
+<dt class="sig sig-object py" id="tacs.elements.CubicTriangleBasis">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">tacs.elements.</span></span><span class="sig-name descname"><span class="pre">CubicTriangleBasis</span></span><a class="headerlink" href="#tacs.elements.CubicTriangleBasis" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">ElementBasis</span></code></p>
+<p>Basis class for a cubic triangular 2D element</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p><strong>numNodes</strong>: 10</p>
+</div>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="tacs.elements.LinearHexaBasis">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">tacs.elements.</span></span><span class="sig-name descname"><span class="pre">LinearHexaBasis</span></span><a class="headerlink" href="#tacs.elements.LinearHexaBasis" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">ElementBasis</span></code></p>
+<p>Basis class for a linear hexahedral 3D element.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p><strong>numNodes</strong>: 8</p>
+</div>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="tacs.elements.LinearQuadBasis">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">tacs.elements.</span></span><span class="sig-name descname"><span class="pre">LinearQuadBasis</span></span><a class="headerlink" href="#tacs.elements.LinearQuadBasis" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">ElementBasis</span></code></p>
+<p>Basis class for a linear quad 2D element.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p><strong>numNodes</strong>: 4</p>
+</div>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="tacs.elements.LinearTetrahedralBasis">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">tacs.elements.</span></span><span class="sig-name descname"><span class="pre">LinearTetrahedralBasis</span></span><a class="headerlink" href="#tacs.elements.LinearTetrahedralBasis" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">ElementBasis</span></code></p>
+<p>Basis class for a linear tetrahedral 3D element.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p><strong>numNodes</strong>: 4</p>
+</div>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="tacs.elements.LinearTriangleBasis">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">tacs.elements.</span></span><span class="sig-name descname"><span class="pre">LinearTriangleBasis</span></span><a class="headerlink" href="#tacs.elements.LinearTriangleBasis" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">ElementBasis</span></code></p>
+<p>Basis class for a linear triangular 2D element</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p><strong>numNodes</strong>: 3</p>
+</div>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="tacs.elements.QuadraticHexaBasis">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">tacs.elements.</span></span><span class="sig-name descname"><span class="pre">QuadraticHexaBasis</span></span><a class="headerlink" href="#tacs.elements.QuadraticHexaBasis" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">ElementBasis</span></code></p>
+<p>Basis class for a quadratic hexahedral 3D element.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p><strong>numNodes</strong>: 27</p>
+</div>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="tacs.elements.QuadraticQuadBasis">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">tacs.elements.</span></span><span class="sig-name descname"><span class="pre">QuadraticQuadBasis</span></span><a class="headerlink" href="#tacs.elements.QuadraticQuadBasis" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">ElementBasis</span></code></p>
+<p>Basis class for a quadratic quad 2D element.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p><strong>numNodes</strong>: 9</p>
+</div>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="tacs.elements.QuadraticTetrahedralBasis">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">tacs.elements.</span></span><span class="sig-name descname"><span class="pre">QuadraticTetrahedralBasis</span></span><a class="headerlink" href="#tacs.elements.QuadraticTetrahedralBasis" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">ElementBasis</span></code></p>
+<p>Basis class for a quadratic tetrahedral 3D element.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p><strong>numNodes</strong>: 10</p>
+</div>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="tacs.elements.QuadraticTriangleBasis">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">tacs.elements.</span></span><span class="sig-name descname"><span class="pre">QuadraticTriangleBasis</span></span><a class="headerlink" href="#tacs.elements.QuadraticTriangleBasis" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">ElementBasis</span></code></p>
+<p>Basis class for a quadratic triangular 2D element</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p><strong>numNodes</strong>: 6</p>
+</div>
+</dd></dl>
+
+<dl class="py class">
 <dt class="sig sig-object py" id="tacs.elements.QuarticQuadBasis">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tacs.elements.</span></span><span class="sig-name descname"><span class="pre">QuarticQuadBasis</span></span><a class="headerlink" href="#tacs.elements.QuarticQuadBasis" title="Link to this definition">¶</a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">tacs.elements.</span></span><span class="sig-name descname"><span class="pre">QuarticQuadBasis</span></span><a class="headerlink" href="#tacs.elements.QuarticQuadBasis" title="Link to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">ElementBasis</span></code></p>
 <p>Basis class for a quartic quad 2D element.</p>
 <div class="admonition note">
@@ -152,45 +185,12 @@ These elements may require an <code class="xref py py-class docutils literal not
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tacs.elements.QuinticQuadBasis">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tacs.elements.</span></span><span class="sig-name descname"><span class="pre">QuinticQuadBasis</span></span><a class="headerlink" href="#tacs.elements.QuinticQuadBasis" title="Link to this definition">¶</a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">tacs.elements.</span></span><span class="sig-name descname"><span class="pre">QuinticQuadBasis</span></span><a class="headerlink" href="#tacs.elements.QuinticQuadBasis" title="Link to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">ElementBasis</span></code></p>
 <p>Basis class for a quintic quad 2D element.</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
 <p><strong>numNodes</strong>: 36</p>
-</div>
-</dd></dl>
-
-<dl class="py class">
-<dt class="sig sig-object py" id="tacs.elements.LinearTriangleBasis">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tacs.elements.</span></span><span class="sig-name descname"><span class="pre">LinearTriangleBasis</span></span><a class="headerlink" href="#tacs.elements.LinearTriangleBasis" title="Link to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">ElementBasis</span></code></p>
-<p>Basis class for a linear triangular 2D element</p>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p><strong>numNodes</strong>: 3</p>
-</div>
-</dd></dl>
-
-<dl class="py class">
-<dt class="sig sig-object py" id="tacs.elements.QuadraticTriangleBasis">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tacs.elements.</span></span><span class="sig-name descname"><span class="pre">QuadraticTriangleBasis</span></span><a class="headerlink" href="#tacs.elements.QuadraticTriangleBasis" title="Link to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">ElementBasis</span></code></p>
-<p>Basis class for a quadratic triangular 2D element</p>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p><strong>numNodes</strong>: 6</p>
-</div>
-</dd></dl>
-
-<dl class="py class">
-<dt class="sig sig-object py" id="tacs.elements.CubicTriangleBasis">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tacs.elements.</span></span><span class="sig-name descname"><span class="pre">CubicTriangleBasis</span></span><a class="headerlink" href="#tacs.elements.CubicTriangleBasis" title="Link to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">ElementBasis</span></code></p>
-<p>Basis class for a cubic triangular 2D element</p>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p><strong>numNodes</strong>: 10</p>
 </div>
 </dd></dl>
 
@@ -201,7 +201,7 @@ These elements may require an <code class="xref py py-class docutils literal not
 The following <code class="xref py py-class docutils literal notranslate"><span class="pre">ElementModel</span></code> classes are available in TACS:</p>
 <dl class="py class">
 <dt class="sig sig-object py">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tacs.elements.</span></span><span class="sig-name descname"><span class="pre">HeatConduction2D</span></span></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">tacs.elements.</span></span><span class="sig-name descname"><span class="pre">HeatConduction2D</span></span></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">ElementModel</span></code></p>
 <p>Model class for 2D heat conduction element.</p>
 <div class="admonition note">
@@ -217,7 +217,7 @@ The following <code class="xref py py-class docutils literal notranslate"><span 
 
 <dl class="py class">
 <dt class="sig sig-object py">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tacs.elements.</span></span><span class="sig-name descname"><span class="pre">HeatConduction3D</span></span></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">tacs.elements.</span></span><span class="sig-name descname"><span class="pre">HeatConduction3D</span></span></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">ElementModel</span></code></p>
 <p>Model class for 3D heat conduction element.</p>
 <div class="admonition note">
@@ -233,23 +233,7 @@ The following <code class="xref py py-class docutils literal notranslate"><span 
 
 <dl class="py class">
 <dt class="sig sig-object py">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tacs.elements.</span></span><span class="sig-name descname"><span class="pre">PCMHeatConduction2D</span></span></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">ElementModel</span></code></p>
-<p>Model class for 2D phase change material heat conduction element.</p>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p><strong>varsPerNode</strong>: 1</p>
-</div>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>con</strong> (<em>PhaseChangeMaterialConstitutive</em>) -- Material constitutive properties.</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py class">
-<dt class="sig sig-object py">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tacs.elements.</span></span><span class="sig-name descname"><span class="pre">LinearElasticity2D</span></span></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">tacs.elements.</span></span><span class="sig-name descname"><span class="pre">LinearElasticity2D</span></span></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">ElementModel</span></code></p>
 <p>Model class for 2D linear elasticity element.</p>
 <div class="admonition note">
@@ -265,7 +249,7 @@ The following <code class="xref py py-class docutils literal notranslate"><span 
 
 <dl class="py class">
 <dt class="sig sig-object py">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tacs.elements.</span></span><span class="sig-name descname"><span class="pre">LinearElasticity3D</span></span></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">tacs.elements.</span></span><span class="sig-name descname"><span class="pre">LinearElasticity3D</span></span></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">ElementModel</span></code></p>
 <p>Model class for 3D linear elasticity element.</p>
 <div class="admonition note">
@@ -281,7 +265,7 @@ The following <code class="xref py py-class docutils literal notranslate"><span 
 
 <dl class="py class">
 <dt class="sig sig-object py">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tacs.elements.</span></span><span class="sig-name descname"><span class="pre">LinearThermoelasticity2D</span></span></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">tacs.elements.</span></span><span class="sig-name descname"><span class="pre">LinearThermoelasticity2D</span></span></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">ElementModel</span></code></p>
 <p>Model class for 2D linear thermoelasticity element.</p>
 <div class="admonition note">
@@ -300,7 +284,7 @@ The following <code class="xref py py-class docutils literal notranslate"><span 
 
 <dl class="py class">
 <dt class="sig sig-object py">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tacs.elements.</span></span><span class="sig-name descname"><span class="pre">LinearThermoelasticity3D</span></span></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">tacs.elements.</span></span><span class="sig-name descname"><span class="pre">LinearThermoelasticity3D</span></span></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">ElementModel</span></code></p>
 <p>Model class for 3D linear thermoelasticity element.</p>
 <div class="admonition note">
@@ -317,6 +301,22 @@ The following <code class="xref py py-class docutils literal notranslate"><span 
 </dl>
 </dd></dl>
 
+<dl class="py class">
+<dt class="sig sig-object py">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">tacs.elements.</span></span><span class="sig-name descname"><span class="pre">PCMHeatConduction2D</span></span></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">ElementModel</span></code></p>
+<p>Model class for 2D phase change material heat conduction element.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p><strong>varsPerNode</strong>: 1</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>con</strong> (<em>PhaseChangeMaterialConstitutive</em>) -- Material constitutive properties.</p>
+</dd>
+</dl>
+</dd></dl>
+
 </section>
 <section id="transform-classes">
 <h2>Transform classes<a class="headerlink" href="#transform-classes" title="Link to this heading">¶</a></h2>
@@ -324,7 +324,40 @@ The following <code class="xref py py-class docutils literal notranslate"><span 
 The following transform classes are available in TACS:</p>
 <dl class="py class">
 <dt class="sig sig-object py">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tacs.elements.</span></span><span class="sig-name descname"><span class="pre">ShellNaturalTransform</span></span></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">tacs.elements.</span></span><span class="sig-name descname"><span class="pre">BeamRefAxisTransform</span></span></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">BeamTransform</span></code></p>
+<p>Class for computing the transformation from the global coordinates
+to the beam local coordinates (used for defining stresses).
+This class uses a projection of a user-supplied reference axis to define the beam coordinate system
+(i.e. local <span class="math notranslate nohighlight">\(y\)</span> is aligned with the reference axis.)</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>The reference direction cannot be parallel to the beam axis.</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>axis</strong> (<em>array-like</em>) -- Reference axis.</p>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">getRefAxis</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span></dt>
+<dd><p>Get reference axis for transform.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>reference axis</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>axis (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.5)">numpy.ndarray</a>)</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">tacs.elements.</span></span><span class="sig-name descname"><span class="pre">ShellNaturalTransform</span></span></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">ShellTransform</span></code></p>
 <p>Class for computing the transformation from the global coordinates
 to the shell/material local coordinates (used for defining stresses).
@@ -338,7 +371,7 @@ This is appropriate for isotropic shells, who's stiffness properties don't depen
 
 <dl class="py class">
 <dt class="sig sig-object py">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tacs.elements.</span></span><span class="sig-name descname"><span class="pre">ShellRefAxisTransform</span></span></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">tacs.elements.</span></span><span class="sig-name descname"><span class="pre">ShellRefAxisTransform</span></span></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">ShellTransform</span></code></p>
 <p>Class for computing the transformation from the global coordinates
 to the shell local coordinates (used for defining stresses).
@@ -376,40 +409,7 @@ This is appropriate for orthotropic and anisotropic shells, who's stiffness prop
 
 <dl class="py class">
 <dt class="sig sig-object py">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tacs.elements.</span></span><span class="sig-name descname"><span class="pre">BeamRefAxisTransform</span></span></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">BeamTransform</span></code></p>
-<p>Class for computing the transformation from the global coordinates
-to the beam local coordinates (used for defining stresses).
-This class uses a projection of a user-supplied reference axis to define the beam coordinate system
-(i.e. local <span class="math notranslate nohighlight">\(y\)</span> is aligned with the reference axis.)</p>
-<div class="admonition warning">
-<p class="admonition-title">Warning</p>
-<p>The reference direction cannot be parallel to the beam axis.</p>
-</div>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>axis</strong> (<em>array-like</em>) -- Reference axis.</p>
-</dd>
-</dl>
-<dl class="py method">
-<dt class="sig sig-object py">
-<span class="sig-name descname"><span class="pre">getRefAxis</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span></dt>
-<dd><p>Get reference axis for transform.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p>reference axis</p>
-</dd>
-<dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p>axis (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.5)">numpy.ndarray</a>)</p>
-</dd>
-</dl>
-</dd></dl>
-
-</dd></dl>
-
-<dl class="py class">
-<dt class="sig sig-object py">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tacs.elements.</span></span><span class="sig-name descname"><span class="pre">SpringIdentityTransform</span></span></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">tacs.elements.</span></span><span class="sig-name descname"><span class="pre">SpringIdentityTransform</span></span></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">SpringTransform</span></code></p>
 <p>Class for computing the transformation from the global coordinates
 to the spring/material local coordinates (used for defining spring stifness directions).
@@ -418,7 +418,7 @@ This class uses an identity transform (i.e. the spring stiffnesses are aligned w
 
 <dl class="py class">
 <dt class="sig sig-object py">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tacs.elements.</span></span><span class="sig-name descname"><span class="pre">SpringRefAxisTransform</span></span></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">tacs.elements.</span></span><span class="sig-name descname"><span class="pre">SpringRefAxisTransform</span></span></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">SpringTransform</span></code></p>
 <p>Class for computing the transformation from the global coordinates
 to the spring/material local coordinates (used for defining spring stiffness directions).
@@ -453,7 +453,7 @@ The local <cite>y</cite> is given by the cross product of local <cite>z</cite> a
 
 <dl class="py class">
 <dt class="sig sig-object py">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tacs.elements.</span></span><span class="sig-name descname"><span class="pre">SpringRefFrameTransform</span></span></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">tacs.elements.</span></span><span class="sig-name descname"><span class="pre">SpringRefFrameTransform</span></span></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">SpringTransform</span></code></p>
 <p>Class for computing the transformation from the global coordinates
 to the spring/material local coordinates (used for defining spring stifness directions).
@@ -484,7 +484,93 @@ axis_j (numpy.ndarray): second reference axis</p>
 <p>The following <code class="xref py py-class docutils literal notranslate"><span class="pre">Element</span></code> classes are available in TACS:</p>
 <dl class="py class">
 <dt class="sig sig-object py">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tacs.elements.</span></span><span class="sig-name descname"><span class="pre">Element2D</span></span></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">tacs.elements.</span></span><span class="sig-name descname"><span class="pre">Beam2</span></span></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Element</span></code></p>
+<p>A 2-node Timoshenko beam element for general linear elastic analysis.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p><strong>varsPerNode</strong>: 6</p>
+<p><strong>numNodes</strong>: 2</p>
+<p><strong>outputElement</strong>: <code class="docutils literal notranslate"><span class="pre">TACS.BEAM_OR_SHELL_ELEMENT</span></code></p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>transform</strong> (<em>BeamTransform</em>) -- Beam transform object.</p></li>
+<li><p><strong>con</strong> (<em>BeamConstitutive</em>) -- Beam constitutive object.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">tacs.elements.</span></span><span class="sig-name descname"><span class="pre">Beam2ModRot</span></span></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Element</span></code></p>
+<p>A 2-node Timoshenko beam element for general nonlinear elastic analysis
+with moderate rotations.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p><strong>varsPerNode</strong>: 6</p>
+<p><strong>numNodes</strong>: 2</p>
+<p><strong>outputElement</strong>: <code class="docutils literal notranslate"><span class="pre">TACS.BEAM_OR_SHELL_ELEMENT</span></code></p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>transform</strong> (<em>BeamTransform</em>) -- Beam transform object.</p></li>
+<li><p><strong>con</strong> (<em>BeamConstitutive</em>) -- Beam constitutive object.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">tacs.elements.</span></span><span class="sig-name descname"><span class="pre">Beam3</span></span></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Element</span></code></p>
+<p>A 3-node Timoshenko beam element for general linear elastic analysis.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p><strong>varsPerNode</strong>: 6</p>
+<p><strong>numNodes</strong>: 3</p>
+<p><strong>outputElement</strong>: <code class="docutils literal notranslate"><span class="pre">TACS.BEAM_OR_SHELL_ELEMENT</span></code></p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>transform</strong> (<em>BeamTransform</em>) -- Beam transform object.</p></li>
+<li><p><strong>con</strong> (<em>BeamConstitutive</em>) -- Beam constitutive object.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">tacs.elements.</span></span><span class="sig-name descname"><span class="pre">Beam3ModRot</span></span></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Element</span></code></p>
+<p>A 3-node Timoshenko beam element for general nonlinear elastic analysis
+with moderate rotations.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p><strong>varsPerNode</strong>: 6</p>
+<p><strong>numNodes</strong>: 3</p>
+<p><strong>outputElement</strong>: <code class="docutils literal notranslate"><span class="pre">TACS.BEAM_OR_SHELL_ELEMENT</span></code></p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>transform</strong> (<em>BeamTransform</em>) -- Beam transform object.</p></li>
+<li><p><strong>con</strong> (<em>BeamConstitutive</em>) -- Beam constitutive object.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">tacs.elements.</span></span><span class="sig-name descname"><span class="pre">Element2D</span></span></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Element</span></code></p>
 <p>General element class appropriate for 2D analysis.</p>
 <div class="admonition note">
@@ -505,7 +591,7 @@ axis_j (numpy.ndarray): second reference axis</p>
 
 <dl class="py class">
 <dt class="sig sig-object py">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tacs.elements.</span></span><span class="sig-name descname"><span class="pre">Element3D</span></span></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">tacs.elements.</span></span><span class="sig-name descname"><span class="pre">Element3D</span></span></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Element</span></code></p>
 <p>General element class appropriate for 3D analysis.</p>
 <div class="admonition note">
@@ -526,187 +612,25 @@ axis_j (numpy.ndarray): second reference axis</p>
 
 <dl class="py class">
 <dt class="sig sig-object py">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tacs.elements.</span></span><span class="sig-name descname"><span class="pre">Quad4Shell</span></span></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">tacs.elements.</span></span><span class="sig-name descname"><span class="pre">MassElement</span></span></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Element</span></code></p>
-<p>A 4-node quad shell element for general linear elastic analysis.</p>
-<p>This element employs a mixed interpolation of tensorial (strain)
-components (MITC) method to avoid shear locking problems.</p>
-<div class="admonition seealso">
-<p class="admonition-title">See also</p>
-<p><a class="reference internal" href="../theory/shell_element.html#mixed-interpolation-of-tensorial-components"><span class="std std-ref">Mixed Interpolation of Tensorial Components</span></a></p>
-</div>
+<p>A 6 DOF point mass element.</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
 <p><strong>varsPerNode</strong>: 6</p>
-<p><strong>numNodes</strong>: 4</p>
-<p><strong>outputElement</strong>: <code class="docutils literal notranslate"><span class="pre">TACS.BEAM_OR_SHELL_ELEMENT</span></code></p>
+<p><strong>numNodes</strong>: 1</p>
+<p><strong>outputElement</strong>: <code class="docutils literal notranslate"><span class="pre">TACS.MASS_ELEMENT</span></code></p>
 </div>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>transform</strong> (<em>ShellTransform</em><em> or </em><em>None</em>) -- Shell transform object.
-<code class="docutils literal notranslate"><span class="pre">None</span></code> is equivalent to <code class="xref py py-class docutils literal notranslate"><span class="pre">ShellNaturalTransform</span></code>.</p></li>
-<li><p><strong>con</strong> (<em>ShellConstitutive</em>) -- Shell constitutive object.</p></li>
-</ul>
+<dd class="field-odd"><p><strong>con</strong> (<em>GeneralMassConstitutive</em>) -- Point mass constitutive object.</p>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py class">
 <dt class="sig sig-object py">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tacs.elements.</span></span><span class="sig-name descname"><span class="pre">Quad9Shell</span></span></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Element</span></code></p>
-<p>A 9-node quad shell element for general linear elastic analysis.</p>
-<p>This element employs a mixed interpolation of tensorial (strain)
-components (MITC) method to avoid shear locking problems.</p>
-<div class="admonition seealso">
-<p class="admonition-title">See also</p>
-<p><a class="reference internal" href="../theory/shell_element.html#mixed-interpolation-of-tensorial-components"><span class="std std-ref">Mixed Interpolation of Tensorial Components</span></a></p>
-</div>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p><strong>varsPerNode</strong>: 6</p>
-<p><strong>numNodes</strong>: 9</p>
-<p><strong>outputElement</strong>: <code class="docutils literal notranslate"><span class="pre">TACS.BEAM_OR_SHELL_ELEMENT</span></code></p>
-</div>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>transform</strong> (<em>ShellTransform</em><em> or </em><em>None</em>) -- Shell transform object.
-<code class="docutils literal notranslate"><span class="pre">None</span></code> is equivalent to <code class="xref py py-class docutils literal notranslate"><span class="pre">ShellNaturalTransform</span></code>.</p></li>
-<li><p><strong>con</strong> (<em>ShellConstitutive</em>) -- Shell constitutive object.</p></li>
-</ul>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py class">
-<dt class="sig sig-object py">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tacs.elements.</span></span><span class="sig-name descname"><span class="pre">Quad16Shell</span></span></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Element</span></code></p>
-<p>A 16-node quad shell element for general linear elastic analysis.</p>
-<p>This element employs a mixed interpolation of tensorial (strain)
-components (MITC) method to avoid shear locking problems.</p>
-<div class="admonition seealso">
-<p class="admonition-title">See also</p>
-<p><a class="reference internal" href="../theory/shell_element.html#mixed-interpolation-of-tensorial-components"><span class="std std-ref">Mixed Interpolation of Tensorial Components</span></a></p>
-</div>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p><strong>varsPerNode</strong>: 6</p>
-<p><strong>numNodes</strong>: 16</p>
-<p><strong>outputElement</strong>: <code class="docutils literal notranslate"><span class="pre">TACS.BEAM_OR_SHELL_ELEMENT</span></code></p>
-</div>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>transform</strong> (<em>ShellTransform</em><em> or </em><em>None</em>) -- Shell transform object.
-<code class="docutils literal notranslate"><span class="pre">None</span></code> is equivalent to <code class="xref py py-class docutils literal notranslate"><span class="pre">ShellNaturalTransform</span></code>.</p></li>
-<li><p><strong>con</strong> (<em>ShellConstitutive</em>) -- Shell constitutive object.</p></li>
-</ul>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py class">
-<dt class="sig sig-object py">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tacs.elements.</span></span><span class="sig-name descname"><span class="pre">Tri3Shell</span></span></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Element</span></code></p>
-<p>A 3-node triangular shell element for general linear elastic analysis.</p>
-<p>This element employs a mixed interpolation of tensorial (strain)
-components (MITC) method to avoid shear locking problems.</p>
-<div class="admonition seealso">
-<p class="admonition-title">See also</p>
-<p><a class="reference internal" href="../theory/shell_element.html#mixed-interpolation-of-tensorial-components"><span class="std std-ref">Mixed Interpolation of Tensorial Components</span></a></p>
-</div>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p><strong>varsPerNode</strong>: 6</p>
-<p><strong>numNodes</strong>: 3</p>
-<p><strong>outputElement</strong>: <code class="docutils literal notranslate"><span class="pre">TACS.BEAM_OR_SHELL_ELEMENT</span></code></p>
-</div>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>transform</strong> (<em>ShellTransform</em><em> or </em><em>None</em>) -- Shell transform object.
-<code class="docutils literal notranslate"><span class="pre">None</span></code> is equivalent to <code class="xref py py-class docutils literal notranslate"><span class="pre">ShellNaturalTransform</span></code>.</p></li>
-<li><p><strong>con</strong> (<em>ShellConstitutive</em>) -- Shell constitutive object.</p></li>
-</ul>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py class">
-<dt class="sig sig-object py">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tacs.elements.</span></span><span class="sig-name descname"><span class="pre">Quad4NonlinearShell</span></span></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Element</span></code></p>
-<p>A 4-node quad shell element for general geometric nonlinear elastic analysis.
-The element uses a nonlinear strain relationship but retains a linearized treatment of rotations.
-It should therefore capture geometrically nonlinear stress-stiffening effects, provided rotations remain small.</p>
-<div class="admonition seealso">
-<p class="admonition-title">See also</p>
-<p><a class="reference internal" href="../theory/shell_element.html#director-parametrization"><span class="std std-ref">Director parametrization</span></a></p>
-</div>
-<p>This element employs a mixed interpolation of tensorial (strain)
-components (MITC) method to avoid shear locking problems.</p>
-<div class="admonition seealso">
-<p class="admonition-title">See also</p>
-<p><a class="reference internal" href="../theory/shell_element.html#mixed-interpolation-of-tensorial-components"><span class="std std-ref">Mixed Interpolation of Tensorial Components</span></a></p>
-</div>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p><strong>varsPerNode</strong>: 6</p>
-<p><strong>numNodes</strong>: 4</p>
-<p><strong>outputElement</strong>: <code class="docutils literal notranslate"><span class="pre">TACS.BEAM_OR_SHELL_ELEMENT</span></code></p>
-</div>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>transform</strong> (<em>ShellTransform</em><em> or </em><em>None</em>) -- Shell transform object.
-<code class="docutils literal notranslate"><span class="pre">None</span></code> is equivalent to <code class="xref py py-class docutils literal notranslate"><span class="pre">ShellNaturalTransform</span></code>.</p></li>
-<li><p><strong>con</strong> (<em>ShellConstitutive</em>) -- Shell constitutive object.</p></li>
-</ul>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py class">
-<dt class="sig sig-object py">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tacs.elements.</span></span><span class="sig-name descname"><span class="pre">Quad9NonlinearShell</span></span></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Element</span></code></p>
-<p>A 9-node quad shell element for general geometric nonlinear elastic analysis.
-The element uses a nonlinear strain relationship but retains a linearized treatment of rotations.
-It should therefore capture geometrically nonlinear stress-stiffening effects, provided rotations remain small.</p>
-<div class="admonition seealso">
-<p class="admonition-title">See also</p>
-<p><a class="reference internal" href="../theory/shell_element.html#director-parametrization"><span class="std std-ref">Director parametrization</span></a></p>
-</div>
-<p>This element employs a mixed interpolation of tensorial (strain)
-components (MITC) method to avoid shear locking problems.</p>
-<div class="admonition seealso">
-<p class="admonition-title">See also</p>
-<p><a class="reference internal" href="../theory/shell_element.html#mixed-interpolation-of-tensorial-components"><span class="std std-ref">Mixed Interpolation of Tensorial Components</span></a></p>
-</div>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p><strong>varsPerNode</strong>: 6</p>
-<p><strong>numNodes</strong>: 9</p>
-<p><strong>outputElement</strong>: <code class="docutils literal notranslate"><span class="pre">TACS.BEAM_OR_SHELL_ELEMENT</span></code></p>
-</div>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>transform</strong> (<em>ShellTransform</em><em> or </em><em>None</em>) -- Shell transform object.
-<code class="docutils literal notranslate"><span class="pre">None</span></code> is equivalent to <code class="xref py py-class docutils literal notranslate"><span class="pre">ShellNaturalTransform</span></code>.</p></li>
-<li><p><strong>con</strong> (<em>ShellConstitutive</em>) -- Shell constitutive object.</p></li>
-</ul>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py class">
-<dt class="sig sig-object py">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tacs.elements.</span></span><span class="sig-name descname"><span class="pre">Quad16NonlinearShell</span></span></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">tacs.elements.</span></span><span class="sig-name descname"><span class="pre">Quad16NonlinearShell</span></span></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Element</span></code></p>
 <p>A 16-node quad shell element for general geometric nonlinear elastic analysis.
 The element uses a nonlinear strain relationship but retains a linearized treatment of rotations.
@@ -740,15 +664,9 @@ components (MITC) method to avoid shear locking problems.</p>
 
 <dl class="py class">
 <dt class="sig sig-object py">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tacs.elements.</span></span><span class="sig-name descname"><span class="pre">Tri3NonlinearShell</span></span></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">tacs.elements.</span></span><span class="sig-name descname"><span class="pre">Quad16NonlinearThermalShell</span></span></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Element</span></code></p>
-<p>A 3-node triangular shell element for geometric elastic analysis.
-The element uses a nonlinear strain relationship but retains a linearized treatment of rotations.
-It should therefore capture geometrically nonlinear stress-stiffening effects, provided rotations remain small.</p>
-<div class="admonition seealso">
-<p class="admonition-title">See also</p>
-<p><a class="reference internal" href="../theory/shell_element.html#director-parametrization"><span class="std std-ref">Director parametrization</span></a></p>
-</div>
+<p>A 16-node quad shell element for general geometric nonlinear thermoelastic analysis.</p>
 <p>This element employs a mixed interpolation of tensorial (strain)
 components (MITC) method to avoid shear locking problems.</p>
 <div class="admonition seealso">
@@ -757,8 +675,8 @@ components (MITC) method to avoid shear locking problems.</p>
 </div>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
-<p><strong>varsPerNode</strong>: 6</p>
-<p><strong>numNodes</strong>: 3</p>
+<p><strong>varsPerNode</strong>: 7</p>
+<p><strong>numNodes</strong>: 16</p>
 <p><strong>outputElement</strong>: <code class="docutils literal notranslate"><span class="pre">TACS.BEAM_OR_SHELL_ELEMENT</span></code></p>
 </div>
 <dl class="field-list simple">
@@ -774,7 +692,97 @@ components (MITC) method to avoid shear locking problems.</p>
 
 <dl class="py class">
 <dt class="sig sig-object py">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tacs.elements.</span></span><span class="sig-name descname"><span class="pre">Quad4NonlinearThermalShell</span></span></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">tacs.elements.</span></span><span class="sig-name descname"><span class="pre">Quad16Shell</span></span></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Element</span></code></p>
+<p>A 16-node quad shell element for general linear elastic analysis.</p>
+<p>This element employs a mixed interpolation of tensorial (strain)
+components (MITC) method to avoid shear locking problems.</p>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="../theory/shell_element.html#mixed-interpolation-of-tensorial-components"><span class="std std-ref">Mixed Interpolation of Tensorial Components</span></a></p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p><strong>varsPerNode</strong>: 6</p>
+<p><strong>numNodes</strong>: 16</p>
+<p><strong>outputElement</strong>: <code class="docutils literal notranslate"><span class="pre">TACS.BEAM_OR_SHELL_ELEMENT</span></code></p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>transform</strong> (<em>ShellTransform</em><em> or </em><em>None</em>) -- Shell transform object.
+<code class="docutils literal notranslate"><span class="pre">None</span></code> is equivalent to <code class="xref py py-class docutils literal notranslate"><span class="pre">ShellNaturalTransform</span></code>.</p></li>
+<li><p><strong>con</strong> (<em>ShellConstitutive</em>) -- Shell constitutive object.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">tacs.elements.</span></span><span class="sig-name descname"><span class="pre">Quad16ThermalShell</span></span></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Element</span></code></p>
+<p>A 16-node quad shell element for general linear thermoelastic analysis.</p>
+<p>This element employs a mixed interpolation of tensorial (strain)
+components (MITC) method to avoid shear locking problems.</p>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="../theory/shell_element.html#mixed-interpolation-of-tensorial-components"><span class="std std-ref">Mixed Interpolation of Tensorial Components</span></a></p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p><strong>varsPerNode</strong>: 7</p>
+<p><strong>numNodes</strong>: 16</p>
+<p><strong>outputElement</strong>: <code class="docutils literal notranslate"><span class="pre">TACS.BEAM_OR_SHELL_ELEMENT</span></code></p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>transform</strong> (<em>ShellTransform</em><em> or </em><em>None</em>) -- Shell transform object.
+<code class="docutils literal notranslate"><span class="pre">None</span></code> is equivalent to <code class="xref py py-class docutils literal notranslate"><span class="pre">ShellNaturalTransform</span></code>.</p></li>
+<li><p><strong>con</strong> (<em>ShellConstitutive</em>) -- Shell constitutive object.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">tacs.elements.</span></span><span class="sig-name descname"><span class="pre">Quad4NonlinearShell</span></span></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Element</span></code></p>
+<p>A 4-node quad shell element for general geometric nonlinear elastic analysis.
+The element uses a nonlinear strain relationship but retains a linearized treatment of rotations.
+It should therefore capture geometrically nonlinear stress-stiffening effects, provided rotations remain small.</p>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="../theory/shell_element.html#director-parametrization"><span class="std std-ref">Director parametrization</span></a></p>
+</div>
+<p>This element employs a mixed interpolation of tensorial (strain)
+components (MITC) method to avoid shear locking problems.</p>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="../theory/shell_element.html#mixed-interpolation-of-tensorial-components"><span class="std std-ref">Mixed Interpolation of Tensorial Components</span></a></p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p><strong>varsPerNode</strong>: 6</p>
+<p><strong>numNodes</strong>: 4</p>
+<p><strong>outputElement</strong>: <code class="docutils literal notranslate"><span class="pre">TACS.BEAM_OR_SHELL_ELEMENT</span></code></p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>transform</strong> (<em>ShellTransform</em><em> or </em><em>None</em>) -- Shell transform object.
+<code class="docutils literal notranslate"><span class="pre">None</span></code> is equivalent to <code class="xref py py-class docutils literal notranslate"><span class="pre">ShellNaturalTransform</span></code>.</p></li>
+<li><p><strong>con</strong> (<em>ShellConstitutive</em>) -- Shell constitutive object.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">tacs.elements.</span></span><span class="sig-name descname"><span class="pre">Quad4NonlinearThermalShell</span></span></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Element</span></code></p>
 <p>A 4-node quad shell element for general nonlinear thermoelastic analysis.
 The element uses a nonlinear strain relationship but retains a linearized treatment of rotations.
@@ -808,9 +816,9 @@ components (MITC) method to avoid shear locking problems.</p>
 
 <dl class="py class">
 <dt class="sig sig-object py">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tacs.elements.</span></span><span class="sig-name descname"><span class="pre">Quad9NonlinearThermalShell</span></span></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">tacs.elements.</span></span><span class="sig-name descname"><span class="pre">Quad4Shell</span></span></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Element</span></code></p>
-<p>A 9-node quad shell element for general geometric nonlinear thermoelastic analysis.</p>
+<p>A 4-node quad shell element for general linear elastic analysis.</p>
 <p>This element employs a mixed interpolation of tensorial (strain)
 components (MITC) method to avoid shear locking problems.</p>
 <div class="admonition seealso">
@@ -819,8 +827,8 @@ components (MITC) method to avoid shear locking problems.</p>
 </div>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
-<p><strong>varsPerNode</strong>: 7</p>
-<p><strong>numNodes</strong>: 9</p>
+<p><strong>varsPerNode</strong>: 6</p>
+<p><strong>numNodes</strong>: 4</p>
 <p><strong>outputElement</strong>: <code class="docutils literal notranslate"><span class="pre">TACS.BEAM_OR_SHELL_ELEMENT</span></code></p>
 </div>
 <dl class="field-list simple">
@@ -836,63 +844,7 @@ components (MITC) method to avoid shear locking problems.</p>
 
 <dl class="py class">
 <dt class="sig sig-object py">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tacs.elements.</span></span><span class="sig-name descname"><span class="pre">Quad16NonlinearThermalShell</span></span></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Element</span></code></p>
-<p>A 16-node quad shell element for general geometric nonlinear thermoelastic analysis.</p>
-<p>This element employs a mixed interpolation of tensorial (strain)
-components (MITC) method to avoid shear locking problems.</p>
-<div class="admonition seealso">
-<p class="admonition-title">See also</p>
-<p><a class="reference internal" href="../theory/shell_element.html#mixed-interpolation-of-tensorial-components"><span class="std std-ref">Mixed Interpolation of Tensorial Components</span></a></p>
-</div>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p><strong>varsPerNode</strong>: 7</p>
-<p><strong>numNodes</strong>: 16</p>
-<p><strong>outputElement</strong>: <code class="docutils literal notranslate"><span class="pre">TACS.BEAM_OR_SHELL_ELEMENT</span></code></p>
-</div>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>transform</strong> (<em>ShellTransform</em><em> or </em><em>None</em>) -- Shell transform object.
-<code class="docutils literal notranslate"><span class="pre">None</span></code> is equivalent to <code class="xref py py-class docutils literal notranslate"><span class="pre">ShellNaturalTransform</span></code>.</p></li>
-<li><p><strong>con</strong> (<em>ShellConstitutive</em>) -- Shell constitutive object.</p></li>
-</ul>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py class">
-<dt class="sig sig-object py">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tacs.elements.</span></span><span class="sig-name descname"><span class="pre">Tri3NonlinearThermalShell</span></span></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Element</span></code></p>
-<p>A 3-node triangular shell element for general geometric nonlinear thermoelastic analysis.</p>
-<p>This element employs a mixed interpolation of tensorial (strain)
-components (MITC) method to avoid shear locking problems.</p>
-<div class="admonition seealso">
-<p class="admonition-title">See also</p>
-<p><a class="reference internal" href="../theory/shell_element.html#mixed-interpolation-of-tensorial-components"><span class="std std-ref">Mixed Interpolation of Tensorial Components</span></a></p>
-</div>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p><strong>varsPerNode</strong>: 7</p>
-<p><strong>numNodes</strong>: 3</p>
-<p><strong>outputElement</strong>: <code class="docutils literal notranslate"><span class="pre">TACS.BEAM_OR_SHELL_ELEMENT</span></code></p>
-</div>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>transform</strong> (<em>ShellTransform</em><em> or </em><em>None</em>) -- Shell transform object.
-<code class="docutils literal notranslate"><span class="pre">None</span></code> is equivalent to <code class="xref py py-class docutils literal notranslate"><span class="pre">ShellNaturalTransform</span></code>.</p></li>
-<li><p><strong>con</strong> (<em>ShellConstitutive</em>) -- Shell constitutive object.</p></li>
-</ul>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py class">
-<dt class="sig sig-object py">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tacs.elements.</span></span><span class="sig-name descname"><span class="pre">Quad4ThermalShell</span></span></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">tacs.elements.</span></span><span class="sig-name descname"><span class="pre">Quad4ThermalShell</span></span></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Element</span></code></p>
 <p>A 4-node quad shell element for linear thermoelastic analysis.</p>
 <p>This element employs a mixed interpolation of tensorial (strain)
@@ -920,7 +872,97 @@ components (MITC) method to avoid shear locking problems.</p>
 
 <dl class="py class">
 <dt class="sig sig-object py">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tacs.elements.</span></span><span class="sig-name descname"><span class="pre">Quad9ThermalShell</span></span></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">tacs.elements.</span></span><span class="sig-name descname"><span class="pre">Quad9NonlinearShell</span></span></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Element</span></code></p>
+<p>A 9-node quad shell element for general geometric nonlinear elastic analysis.
+The element uses a nonlinear strain relationship but retains a linearized treatment of rotations.
+It should therefore capture geometrically nonlinear stress-stiffening effects, provided rotations remain small.</p>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="../theory/shell_element.html#director-parametrization"><span class="std std-ref">Director parametrization</span></a></p>
+</div>
+<p>This element employs a mixed interpolation of tensorial (strain)
+components (MITC) method to avoid shear locking problems.</p>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="../theory/shell_element.html#mixed-interpolation-of-tensorial-components"><span class="std std-ref">Mixed Interpolation of Tensorial Components</span></a></p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p><strong>varsPerNode</strong>: 6</p>
+<p><strong>numNodes</strong>: 9</p>
+<p><strong>outputElement</strong>: <code class="docutils literal notranslate"><span class="pre">TACS.BEAM_OR_SHELL_ELEMENT</span></code></p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>transform</strong> (<em>ShellTransform</em><em> or </em><em>None</em>) -- Shell transform object.
+<code class="docutils literal notranslate"><span class="pre">None</span></code> is equivalent to <code class="xref py py-class docutils literal notranslate"><span class="pre">ShellNaturalTransform</span></code>.</p></li>
+<li><p><strong>con</strong> (<em>ShellConstitutive</em>) -- Shell constitutive object.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">tacs.elements.</span></span><span class="sig-name descname"><span class="pre">Quad9NonlinearThermalShell</span></span></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Element</span></code></p>
+<p>A 9-node quad shell element for general geometric nonlinear thermoelastic analysis.</p>
+<p>This element employs a mixed interpolation of tensorial (strain)
+components (MITC) method to avoid shear locking problems.</p>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="../theory/shell_element.html#mixed-interpolation-of-tensorial-components"><span class="std std-ref">Mixed Interpolation of Tensorial Components</span></a></p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p><strong>varsPerNode</strong>: 7</p>
+<p><strong>numNodes</strong>: 9</p>
+<p><strong>outputElement</strong>: <code class="docutils literal notranslate"><span class="pre">TACS.BEAM_OR_SHELL_ELEMENT</span></code></p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>transform</strong> (<em>ShellTransform</em><em> or </em><em>None</em>) -- Shell transform object.
+<code class="docutils literal notranslate"><span class="pre">None</span></code> is equivalent to <code class="xref py py-class docutils literal notranslate"><span class="pre">ShellNaturalTransform</span></code>.</p></li>
+<li><p><strong>con</strong> (<em>ShellConstitutive</em>) -- Shell constitutive object.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">tacs.elements.</span></span><span class="sig-name descname"><span class="pre">Quad9Shell</span></span></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Element</span></code></p>
+<p>A 9-node quad shell element for general linear elastic analysis.</p>
+<p>This element employs a mixed interpolation of tensorial (strain)
+components (MITC) method to avoid shear locking problems.</p>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="../theory/shell_element.html#mixed-interpolation-of-tensorial-components"><span class="std std-ref">Mixed Interpolation of Tensorial Components</span></a></p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p><strong>varsPerNode</strong>: 6</p>
+<p><strong>numNodes</strong>: 9</p>
+<p><strong>outputElement</strong>: <code class="docutils literal notranslate"><span class="pre">TACS.BEAM_OR_SHELL_ELEMENT</span></code></p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>transform</strong> (<em>ShellTransform</em><em> or </em><em>None</em>) -- Shell transform object.
+<code class="docutils literal notranslate"><span class="pre">None</span></code> is equivalent to <code class="xref py py-class docutils literal notranslate"><span class="pre">ShellNaturalTransform</span></code>.</p></li>
+<li><p><strong>con</strong> (<em>ShellConstitutive</em>) -- Shell constitutive object.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">tacs.elements.</span></span><span class="sig-name descname"><span class="pre">Quad9ThermalShell</span></span></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Element</span></code></p>
 <p>A 9-node quad shell element for general linear thermoelastic analysis.</p>
 <p>This element employs a mixed interpolation of tensorial (strain)
@@ -948,149 +990,7 @@ components (MITC) method to avoid shear locking problems.</p>
 
 <dl class="py class">
 <dt class="sig sig-object py">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tacs.elements.</span></span><span class="sig-name descname"><span class="pre">Quad16ThermalShell</span></span></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Element</span></code></p>
-<p>A 16-node quad shell element for general linear thermoelastic analysis.</p>
-<p>This element employs a mixed interpolation of tensorial (strain)
-components (MITC) method to avoid shear locking problems.</p>
-<div class="admonition seealso">
-<p class="admonition-title">See also</p>
-<p><a class="reference internal" href="../theory/shell_element.html#mixed-interpolation-of-tensorial-components"><span class="std std-ref">Mixed Interpolation of Tensorial Components</span></a></p>
-</div>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p><strong>varsPerNode</strong>: 7</p>
-<p><strong>numNodes</strong>: 16</p>
-<p><strong>outputElement</strong>: <code class="docutils literal notranslate"><span class="pre">TACS.BEAM_OR_SHELL_ELEMENT</span></code></p>
-</div>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>transform</strong> (<em>ShellTransform</em><em> or </em><em>None</em>) -- Shell transform object.
-<code class="docutils literal notranslate"><span class="pre">None</span></code> is equivalent to <code class="xref py py-class docutils literal notranslate"><span class="pre">ShellNaturalTransform</span></code>.</p></li>
-<li><p><strong>con</strong> (<em>ShellConstitutive</em>) -- Shell constitutive object.</p></li>
-</ul>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py class">
-<dt class="sig sig-object py">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tacs.elements.</span></span><span class="sig-name descname"><span class="pre">Tri3ThermalShell</span></span></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Element</span></code></p>
-<p>A 3-node triangular shell element for general linear thermoelastic analysis.</p>
-<p>This element employs a mixed interpolation of tensorial (strain)
-components (MITC) method to avoid shear locking problems.</p>
-<div class="admonition seealso">
-<p class="admonition-title">See also</p>
-<p><a class="reference internal" href="../theory/shell_element.html#mixed-interpolation-of-tensorial-components"><span class="std std-ref">Mixed Interpolation of Tensorial Components</span></a></p>
-</div>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p><strong>varsPerNode</strong>: 7</p>
-<p><strong>numNodes</strong>: 3</p>
-<p><strong>outputElement</strong>: <code class="docutils literal notranslate"><span class="pre">TACS.BEAM_OR_SHELL_ELEMENT</span></code></p>
-</div>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>transform</strong> (<em>ShellTransform</em><em> or </em><em>None</em>) -- Shell transform object.
-<code class="docutils literal notranslate"><span class="pre">None</span></code> is equivalent to <code class="xref py py-class docutils literal notranslate"><span class="pre">ShellNaturalTransform</span></code>.</p></li>
-<li><p><strong>con</strong> (<em>ShellConstitutive</em>) -- Shell constitutive object.</p></li>
-</ul>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py class">
-<dt class="sig sig-object py">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tacs.elements.</span></span><span class="sig-name descname"><span class="pre">Beam2</span></span></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Element</span></code></p>
-<p>A 2-node Timoshenko beam element for general linear elastic analysis.</p>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p><strong>varsPerNode</strong>: 6</p>
-<p><strong>numNodes</strong>: 2</p>
-<p><strong>outputElement</strong>: <code class="docutils literal notranslate"><span class="pre">TACS.BEAM_OR_SHELL_ELEMENT</span></code></p>
-</div>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>transform</strong> (<em>BeamTransform</em>) -- Beam transform object.</p></li>
-<li><p><strong>con</strong> (<em>BeamConstitutive</em>) -- Beam constitutive object.</p></li>
-</ul>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py class">
-<dt class="sig sig-object py">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tacs.elements.</span></span><span class="sig-name descname"><span class="pre">Beam3</span></span></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Element</span></code></p>
-<p>A 3-node Timoshenko beam element for general linear elastic analysis.</p>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p><strong>varsPerNode</strong>: 6</p>
-<p><strong>numNodes</strong>: 3</p>
-<p><strong>outputElement</strong>: <code class="docutils literal notranslate"><span class="pre">TACS.BEAM_OR_SHELL_ELEMENT</span></code></p>
-</div>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>transform</strong> (<em>BeamTransform</em>) -- Beam transform object.</p></li>
-<li><p><strong>con</strong> (<em>BeamConstitutive</em>) -- Beam constitutive object.</p></li>
-</ul>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py class">
-<dt class="sig sig-object py">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tacs.elements.</span></span><span class="sig-name descname"><span class="pre">Beam2ModRot</span></span></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Element</span></code></p>
-<p>A 2-node Timoshenko beam element for general nonlinear elastic analysis
-with moderate rotations.</p>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p><strong>varsPerNode</strong>: 6</p>
-<p><strong>numNodes</strong>: 2</p>
-<p><strong>outputElement</strong>: <code class="docutils literal notranslate"><span class="pre">TACS.BEAM_OR_SHELL_ELEMENT</span></code></p>
-</div>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>transform</strong> (<em>BeamTransform</em>) -- Beam transform object.</p></li>
-<li><p><strong>con</strong> (<em>BeamConstitutive</em>) -- Beam constitutive object.</p></li>
-</ul>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py class">
-<dt class="sig sig-object py">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tacs.elements.</span></span><span class="sig-name descname"><span class="pre">Beam3ModRot</span></span></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Element</span></code></p>
-<p>A 3-node Timoshenko beam element for general nonlinear elastic analysis
-with moderate rotations.</p>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p><strong>varsPerNode</strong>: 6</p>
-<p><strong>numNodes</strong>: 3</p>
-<p><strong>outputElement</strong>: <code class="docutils literal notranslate"><span class="pre">TACS.BEAM_OR_SHELL_ELEMENT</span></code></p>
-</div>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>transform</strong> (<em>BeamTransform</em>) -- Beam transform object.</p></li>
-<li><p><strong>con</strong> (<em>BeamConstitutive</em>) -- Beam constitutive object.</p></li>
-</ul>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py class">
-<dt class="sig sig-object py">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tacs.elements.</span></span><span class="sig-name descname"><span class="pre">RBE2</span></span></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">tacs.elements.</span></span><span class="sig-name descname"><span class="pre">RBE2</span></span></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Element</span></code></p>
 <p>A rigid body connected to an arbitrary number of grid points.
 The independent degrees-of-freedom are the six components of motion at
@@ -1113,7 +1013,7 @@ dependent node dof's are attached to the element.</p></li>
 </dl>
 <dl class="py method">
 <dt class="sig sig-object py">
-<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">setScalingParameters</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">C1</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1000.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">C2</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em><span class="sig-paren">)</span></dt>
+<span class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">setScalingParameters</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">C1</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1000.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">C2</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em><span class="sig-paren">)</span></dt>
 <dd><p>Set scaling parameters used in Lagrange multiplier formulation of the element.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -1130,7 +1030,7 @@ dependent node dof's are attached to the element.</p></li>
 
 <dl class="py class">
 <dt class="sig sig-object py">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tacs.elements.</span></span><span class="sig-name descname"><span class="pre">RBE3</span></span></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">tacs.elements.</span></span><span class="sig-name descname"><span class="pre">RBE3</span></span></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Element</span></code></p>
 <p>The RBE3 element is a powerful tool for distributing applied
 loads and mass in a model. Unlike the RBAR and RBE2 elements,
@@ -1158,7 +1058,7 @@ independent node dof's are attached to the element.</p></li>
 </dl>
 <dl class="py method">
 <dt class="sig sig-object py">
-<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">setScalingParameters</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">C1</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1000.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">C2</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em><span class="sig-paren">)</span></dt>
+<span class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">setScalingParameters</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">C1</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1000.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">C2</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em><span class="sig-paren">)</span></dt>
 <dd><p>Set scaling parameters used in Lagrange multiplier formulation of the element.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -1175,25 +1075,7 @@ independent node dof's are attached to the element.</p></li>
 
 <dl class="py class">
 <dt class="sig sig-object py">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tacs.elements.</span></span><span class="sig-name descname"><span class="pre">MassElement</span></span></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Element</span></code></p>
-<p>A 6 DOF point mass element.</p>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p><strong>varsPerNode</strong>: 6</p>
-<p><strong>numNodes</strong>: 1</p>
-<p><strong>outputElement</strong>: <code class="docutils literal notranslate"><span class="pre">TACS.MASS_ELEMENT</span></code></p>
-</div>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>con</strong> (<em>GeneralMassConstitutive</em>) -- Point mass constitutive object.</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py class">
-<dt class="sig sig-object py">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tacs.elements.</span></span><span class="sig-name descname"><span class="pre">SpringElement</span></span></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">tacs.elements.</span></span><span class="sig-name descname"><span class="pre">SpringElement</span></span></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Element</span></code></p>
 <p>A 6 DOF spring element.</p>
 <div class="admonition note">
@@ -1208,6 +1090,124 @@ independent node dof's are attached to the element.</p></li>
 <li><p><strong>transform</strong> (<em>SpringTransform</em><em> or </em><em>None</em>) -- Spring transform object.
 <code class="docutils literal notranslate"><span class="pre">None</span></code> is equivalent to <code class="xref py py-class docutils literal notranslate"><span class="pre">SpringIdentityTransform</span></code>.</p></li>
 <li><p><strong>con</strong> (<em>GeneralSpringConstitutive</em>) -- Spring constitutive object.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">tacs.elements.</span></span><span class="sig-name descname"><span class="pre">Tri3NonlinearShell</span></span></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Element</span></code></p>
+<p>A 3-node triangular shell element for geometric elastic analysis.
+The element uses a nonlinear strain relationship but retains a linearized treatment of rotations.
+It should therefore capture geometrically nonlinear stress-stiffening effects, provided rotations remain small.</p>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="../theory/shell_element.html#director-parametrization"><span class="std std-ref">Director parametrization</span></a></p>
+</div>
+<p>This element employs a mixed interpolation of tensorial (strain)
+components (MITC) method to avoid shear locking problems.</p>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="../theory/shell_element.html#mixed-interpolation-of-tensorial-components"><span class="std std-ref">Mixed Interpolation of Tensorial Components</span></a></p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p><strong>varsPerNode</strong>: 6</p>
+<p><strong>numNodes</strong>: 3</p>
+<p><strong>outputElement</strong>: <code class="docutils literal notranslate"><span class="pre">TACS.BEAM_OR_SHELL_ELEMENT</span></code></p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>transform</strong> (<em>ShellTransform</em><em> or </em><em>None</em>) -- Shell transform object.
+<code class="docutils literal notranslate"><span class="pre">None</span></code> is equivalent to <code class="xref py py-class docutils literal notranslate"><span class="pre">ShellNaturalTransform</span></code>.</p></li>
+<li><p><strong>con</strong> (<em>ShellConstitutive</em>) -- Shell constitutive object.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">tacs.elements.</span></span><span class="sig-name descname"><span class="pre">Tri3NonlinearThermalShell</span></span></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Element</span></code></p>
+<p>A 3-node triangular shell element for general geometric nonlinear thermoelastic analysis.</p>
+<p>This element employs a mixed interpolation of tensorial (strain)
+components (MITC) method to avoid shear locking problems.</p>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="../theory/shell_element.html#mixed-interpolation-of-tensorial-components"><span class="std std-ref">Mixed Interpolation of Tensorial Components</span></a></p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p><strong>varsPerNode</strong>: 7</p>
+<p><strong>numNodes</strong>: 3</p>
+<p><strong>outputElement</strong>: <code class="docutils literal notranslate"><span class="pre">TACS.BEAM_OR_SHELL_ELEMENT</span></code></p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>transform</strong> (<em>ShellTransform</em><em> or </em><em>None</em>) -- Shell transform object.
+<code class="docutils literal notranslate"><span class="pre">None</span></code> is equivalent to <code class="xref py py-class docutils literal notranslate"><span class="pre">ShellNaturalTransform</span></code>.</p></li>
+<li><p><strong>con</strong> (<em>ShellConstitutive</em>) -- Shell constitutive object.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">tacs.elements.</span></span><span class="sig-name descname"><span class="pre">Tri3Shell</span></span></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Element</span></code></p>
+<p>A 3-node triangular shell element for general linear elastic analysis.</p>
+<p>This element employs a mixed interpolation of tensorial (strain)
+components (MITC) method to avoid shear locking problems.</p>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="../theory/shell_element.html#mixed-interpolation-of-tensorial-components"><span class="std std-ref">Mixed Interpolation of Tensorial Components</span></a></p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p><strong>varsPerNode</strong>: 6</p>
+<p><strong>numNodes</strong>: 3</p>
+<p><strong>outputElement</strong>: <code class="docutils literal notranslate"><span class="pre">TACS.BEAM_OR_SHELL_ELEMENT</span></code></p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>transform</strong> (<em>ShellTransform</em><em> or </em><em>None</em>) -- Shell transform object.
+<code class="docutils literal notranslate"><span class="pre">None</span></code> is equivalent to <code class="xref py py-class docutils literal notranslate"><span class="pre">ShellNaturalTransform</span></code>.</p></li>
+<li><p><strong>con</strong> (<em>ShellConstitutive</em>) -- Shell constitutive object.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">tacs.elements.</span></span><span class="sig-name descname"><span class="pre">Tri3ThermalShell</span></span></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Element</span></code></p>
+<p>A 3-node triangular shell element for general linear thermoelastic analysis.</p>
+<p>This element employs a mixed interpolation of tensorial (strain)
+components (MITC) method to avoid shear locking problems.</p>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="../theory/shell_element.html#mixed-interpolation-of-tensorial-components"><span class="std std-ref">Mixed Interpolation of Tensorial Components</span></a></p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p><strong>varsPerNode</strong>: 7</p>
+<p><strong>numNodes</strong>: 3</p>
+<p><strong>outputElement</strong>: <code class="docutils literal notranslate"><span class="pre">TACS.BEAM_OR_SHELL_ELEMENT</span></code></p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>transform</strong> (<em>ShellTransform</em><em> or </em><em>None</em>) -- Shell transform object.
+<code class="docutils literal notranslate"><span class="pre">None</span></code> is equivalent to <code class="xref py py-class docutils literal notranslate"><span class="pre">ShellNaturalTransform</span></code>.</p></li>
+<li><p><strong>con</strong> (<em>ShellConstitutive</em>) -- Shell constitutive object.</p></li>
 </ul>
 </dd>
 </dl>
@@ -1228,19 +1228,19 @@ independent node dof's are attached to the element.</p></li>
     <ul>
 <li><a class="reference internal" href="#">elements module</a><ul>
 <li><a class="reference internal" href="#basis-classes">Basis classes</a><ul>
-<li><a class="reference internal" href="#tacs.elements.LinearTetrahedralBasis"><code class="docutils literal notranslate"><span class="pre">LinearTetrahedralBasis</span></code></a></li>
-<li><a class="reference internal" href="#tacs.elements.QuadraticTetrahedralBasis"><code class="docutils literal notranslate"><span class="pre">QuadraticTetrahedralBasis</span></code></a></li>
-<li><a class="reference internal" href="#tacs.elements.LinearHexaBasis"><code class="docutils literal notranslate"><span class="pre">LinearHexaBasis</span></code></a></li>
-<li><a class="reference internal" href="#tacs.elements.QuadraticHexaBasis"><code class="docutils literal notranslate"><span class="pre">QuadraticHexaBasis</span></code></a></li>
 <li><a class="reference internal" href="#tacs.elements.CubicHexaBasis"><code class="docutils literal notranslate"><span class="pre">CubicHexaBasis</span></code></a></li>
-<li><a class="reference internal" href="#tacs.elements.LinearQuadBasis"><code class="docutils literal notranslate"><span class="pre">LinearQuadBasis</span></code></a></li>
-<li><a class="reference internal" href="#tacs.elements.QuadraticQuadBasis"><code class="docutils literal notranslate"><span class="pre">QuadraticQuadBasis</span></code></a></li>
 <li><a class="reference internal" href="#tacs.elements.CubicQuadBasis"><code class="docutils literal notranslate"><span class="pre">CubicQuadBasis</span></code></a></li>
+<li><a class="reference internal" href="#tacs.elements.CubicTriangleBasis"><code class="docutils literal notranslate"><span class="pre">CubicTriangleBasis</span></code></a></li>
+<li><a class="reference internal" href="#tacs.elements.LinearHexaBasis"><code class="docutils literal notranslate"><span class="pre">LinearHexaBasis</span></code></a></li>
+<li><a class="reference internal" href="#tacs.elements.LinearQuadBasis"><code class="docutils literal notranslate"><span class="pre">LinearQuadBasis</span></code></a></li>
+<li><a class="reference internal" href="#tacs.elements.LinearTetrahedralBasis"><code class="docutils literal notranslate"><span class="pre">LinearTetrahedralBasis</span></code></a></li>
+<li><a class="reference internal" href="#tacs.elements.LinearTriangleBasis"><code class="docutils literal notranslate"><span class="pre">LinearTriangleBasis</span></code></a></li>
+<li><a class="reference internal" href="#tacs.elements.QuadraticHexaBasis"><code class="docutils literal notranslate"><span class="pre">QuadraticHexaBasis</span></code></a></li>
+<li><a class="reference internal" href="#tacs.elements.QuadraticQuadBasis"><code class="docutils literal notranslate"><span class="pre">QuadraticQuadBasis</span></code></a></li>
+<li><a class="reference internal" href="#tacs.elements.QuadraticTetrahedralBasis"><code class="docutils literal notranslate"><span class="pre">QuadraticTetrahedralBasis</span></code></a></li>
+<li><a class="reference internal" href="#tacs.elements.QuadraticTriangleBasis"><code class="docutils literal notranslate"><span class="pre">QuadraticTriangleBasis</span></code></a></li>
 <li><a class="reference internal" href="#tacs.elements.QuarticQuadBasis"><code class="docutils literal notranslate"><span class="pre">QuarticQuadBasis</span></code></a></li>
 <li><a class="reference internal" href="#tacs.elements.QuinticQuadBasis"><code class="docutils literal notranslate"><span class="pre">QuinticQuadBasis</span></code></a></li>
-<li><a class="reference internal" href="#tacs.elements.LinearTriangleBasis"><code class="docutils literal notranslate"><span class="pre">LinearTriangleBasis</span></code></a></li>
-<li><a class="reference internal" href="#tacs.elements.QuadraticTriangleBasis"><code class="docutils literal notranslate"><span class="pre">QuadraticTriangleBasis</span></code></a></li>
-<li><a class="reference internal" href="#tacs.elements.CubicTriangleBasis"><code class="docutils literal notranslate"><span class="pre">CubicTriangleBasis</span></code></a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#model-classes">Model classes</a></li>

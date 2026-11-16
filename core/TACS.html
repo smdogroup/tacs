@@ -10,8 +10,8 @@
     <link rel="stylesheet" type="text/css" href="../_static/sphinxdoc.css?v=34905f61" />
     <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
     <script src="../_static/documentation_options.js?v=d048f138"></script>
-    <script src="../_static/doctools.js?v=9bcbadda"></script>
-    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="pyTACS" href="../pytacs/pytacs.html" />
@@ -86,7 +86,7 @@ be evaluated using the adjoint method with the <a class="reference internal" hre
 </ol>
 <dl class="py class">
 <dt class="sig sig-object py" id="TACS.Assembler">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">TACS.</span></span><span class="sig-name descname"><span class="pre">Assembler</span></span><a class="headerlink" href="#TACS.Assembler" title="Link to this definition">¶</a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">TACS.</span></span><span class="sig-name descname"><span class="pre">Assembler</span></span><a class="headerlink" href="#TACS.Assembler" title="Link to this definition">¶</a></dt>
 <dd><dl class="py method">
 <dt class="sig sig-object py" id="TACS.Assembler.addAdjointResProducts">
 <span class="sig-name descname"><span class="pre">addAdjointResProducts</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">adjlist</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dfdxlist</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">alpha</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">loadScale</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#TACS.Assembler.addAdjointResProducts" title="Link to this definition">¶</a></dt>
@@ -269,7 +269,7 @@ heat fluxes, etc. depending on the physics).</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="TACS.Assembler.create">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">create</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">comm</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">varsPerNode</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">numOwnedNodes</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">numElements</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">numDependentNodes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#TACS.Assembler.create" title="Link to this definition">¶</a></dt>
+<span class="property"><span class="k"><span class="pre">static</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">create</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">comm</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">varsPerNode</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">numOwnedNodes</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">numElements</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">numDependentNodes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#TACS.Assembler.create" title="Link to this definition">¶</a></dt>
 <dd><p>Static factory method for creating an instance of Assembler</p>
 </dd></dl>
 
@@ -645,7 +645,7 @@ create the <a class="reference internal" href="#TACS.Assembler" title="TACS.Asse
 </ol>
 <dl class="py class">
 <dt class="sig sig-object py" id="TACS.MeshLoader">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">TACS.</span></span><span class="sig-name descname"><span class="pre">MeshLoader</span></span><a class="headerlink" href="#TACS.MeshLoader" title="Link to this definition">¶</a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">TACS.</span></span><span class="sig-name descname"><span class="pre">MeshLoader</span></span><a class="headerlink" href="#TACS.MeshLoader" title="Link to this definition">¶</a></dt>
 <dd><dl class="py method">
 <dt class="sig sig-object py" id="TACS.MeshLoader.addAuxElement">
 <span class="sig-name descname"><span class="pre">addAuxElement</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">aux</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">comp_num</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">elem</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#TACS.MeshLoader.addAuxElement" title="Link to this definition">¶</a></dt>
@@ -723,7 +723,7 @@ and finally the <code class="xref py py-func docutils literal notranslate"><span
 object.</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="TACS.Creator">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">TACS.</span></span><span class="sig-name descname"><span class="pre">Creator</span></span><a class="headerlink" href="#TACS.Creator" title="Link to this definition">¶</a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">TACS.</span></span><span class="sig-name descname"><span class="pre">Creator</span></span><a class="headerlink" href="#TACS.Creator" title="Link to this definition">¶</a></dt>
 <dd><dl class="py method">
 <dt class="sig sig-object py" id="TACS.Creator.getElementPartition">
 <span class="sig-name descname"><span class="pre">getElementPartition</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#TACS.Creator.getElementPartition" title="Link to this definition">¶</a></dt>
@@ -764,7 +764,7 @@ bound constraint on the KSFailure function.</p>
 <p>The <a class="reference internal" href="#TACS.Integrator" title="TACS.Integrator"><code class="xref py py-class docutils literal notranslate"><span class="pre">Integrator</span></code></a> class contains functions for solving the adjoint equations and governing equations forward in time. Classes for BDF, DIRK, ABM, and NBG integration inherit from this class.</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="TACS.Integrator">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">TACS.</span></span><span class="sig-name descname"><span class="pre">Integrator</span></span><a class="headerlink" href="#TACS.Integrator" title="Link to this definition">¶</a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">TACS.</span></span><span class="sig-name descname"><span class="pre">Integrator</span></span><a class="headerlink" href="#TACS.Integrator" title="Link to this definition">¶</a></dt>
 <dd><p>Class containing functions for solving the equations forward in
 time and adjoint.</p>
 <dl class="py method">
@@ -830,7 +830,7 @@ time and adjoint.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="TACS.Integrator.iterate">
-<span class="sig-name descname"><span class="pre">iterate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">int</span> <span class="pre">step_num</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Vec</span> <span class="pre">forces=None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#TACS.Integrator.iterate" title="Link to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">iterate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">int</span> <span class="pre">step_num</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Vec</span> <span class="pre">forces</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#TACS.Integrator.iterate" title="Link to this definition">¶</a></dt>
 <dd><p>Solve the nonlinear system at current time step</p>
 </dd></dl>
 
@@ -908,7 +908,7 @@ directory.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="TACS.Integrator.setOutputFrequency">
-<span class="sig-name descname"><span class="pre">setOutputFrequency</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">int</span> <span class="pre">write_freq=0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#TACS.Integrator.setOutputFrequency" title="Link to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">setOutputFrequency</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">int</span> <span class="pre">write_freq</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#TACS.Integrator.setOutputFrequency" title="Link to this definition">¶</a></dt>
 <dd><p>Configure how frequent to write f5 files</p>
 </dd></dl>
 
@@ -920,7 +920,7 @@ directory.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="TACS.Integrator.setPrintLevel">
-<span class="sig-name descname"><span class="pre">setPrintLevel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">int</span> <span class="pre">print_level</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fname=None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#TACS.Integrator.setPrintLevel" title="Link to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">setPrintLevel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">int</span> <span class="pre">print_level</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fname</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#TACS.Integrator.setPrintLevel" title="Link to this definition">¶</a></dt>
 <dd><p>Level of print from TACSIntegrator
 0: off
 1: summary each step

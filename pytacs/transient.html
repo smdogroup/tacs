@@ -10,8 +10,8 @@
     <link rel="stylesheet" type="text/css" href="../_static/sphinxdoc.css?v=34905f61" />
     <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
     <script src="../_static/documentation_options.js?v=d048f138"></script>
-    <script src="../_static/doctools.js?v=9bcbadda"></script>
-    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="ModalProblem" href="modal.html" />
@@ -102,7 +102,7 @@ The following options their default values and descriptions are listed below:</p
 <h2>API Reference<a class="headerlink" href="#api-reference" title="Link to this heading">¶</a></h2>
 <dl class="py class">
 <dt class="sig sig-object py" id="tacs.problems.TransientProblem">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tacs.problems.</span></span><span class="sig-name descname"><span class="pre">TransientProblem</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tInit</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tFinal</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">numSteps</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">assembler</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">comm</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outputViewer</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">meshLoader</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">isNonlinear</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">options</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/problems/transient.html#TransientProblem"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.problems.TransientProblem" title="Link to this definition">¶</a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">tacs.problems.</span></span><span class="sig-name descname"><span class="pre">TransientProblem</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tInit</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tFinal</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">numSteps</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">assembler</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">comm</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outputViewer</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">meshLoader</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">isNonlinear</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">options</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/problems/transient.html#TransientProblem"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.problems.TransientProblem" title="Link to this definition">¶</a></dt>
 <dd><p>NOTE: This class should not be initialized directly by the user.
 Use pyTACS.createTransientProblem instead.</p>
 <dl class="field-list simple">
@@ -670,7 +670,7 @@ Defaults to None.</p></li>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tacs.problems.TransientProblem.copyFromTACSVec">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">copyFromTACSVec</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">src</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dest</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tacs.problems.TransientProblem.copyFromTACSVec" title="Link to this definition">¶</a></dt>
+<span class="property"><span class="k"><span class="pre">static</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">copyFromTACSVec</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">src</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dest</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tacs.problems.TransientProblem.copyFromTACSVec" title="Link to this definition">¶</a></dt>
 <dd><p>Copy values from a TACS Vec into either a TACS Vec or numpy array</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -684,7 +684,7 @@ Defaults to None.</p></li>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tacs.problems.TransientProblem.copyToTACSVec">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">copyToTACSVec</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">src</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dest</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tacs.problems.TransientProblem.copyToTACSVec" title="Link to this definition">¶</a></dt>
+<span class="property"><span class="k"><span class="pre">static</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">copyToTACSVec</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">src</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dest</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tacs.problems.TransientProblem.copyToTACSVec" title="Link to this definition">¶</a></dt>
 <dd><p>Copy values into a TACS Vec from either a TACS Vec or numpy array or scalar</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -879,13 +879,13 @@ if more than 1 pytacs object is used in an optimization</p>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="tacs.problems.TransientProblem.isNonlinear">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">isNonlinear</span></span><a class="headerlink" href="#tacs.problems.TransientProblem.isNonlinear" title="Link to this definition">¶</a></dt>
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">isNonlinear</span></span><a class="headerlink" href="#tacs.problems.TransientProblem.isNonlinear" title="Link to this definition">¶</a></dt>
 <dd><p>The public interface for the isNonlinear attribute. Implemented as a property so that it is read-only.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tacs.problems.TransientProblem.printDefaultOptions">
-<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">printDefaultOptions</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.problems.TransientProblem.printDefaultOptions" title="Link to this definition">¶</a></dt>
+<span class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">printDefaultOptions</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.problems.TransientProblem.printDefaultOptions" title="Link to this definition">¶</a></dt>
 <dd><p>Prints a nicely formatted dictionary of all the default solver
 options to the stdout</p>
 </dd></dl>

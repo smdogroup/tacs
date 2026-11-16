@@ -10,9 +10,9 @@
     <link rel="stylesheet" type="text/css" href="../_static/sphinxdoc.css?v=34905f61" />
     <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
     <script src="../_static/documentation_options.js?v=d048f138"></script>
-    <script src="../_static/doctools.js?v=9bcbadda"></script>
-    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
-    <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-mml-chtml.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="caps2tacs" href="../caps2tacs/caps2tacs.html" />
@@ -117,7 +117,7 @@
 <h2>StructProblem Class<a class="headerlink" href="#structproblem-class" title="Link to this heading">¶</a></h2>
 <dl class="py class">
 <dt class="sig sig-object py" id="tacs.mach.struct_problem.StructProblem">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tacs.mach.struct_problem.</span></span><span class="sig-name descname"><span class="pre">StructProblem</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">staticProblem</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">FEAAssembler</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">DVGeo</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">loadFile</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/mach/struct_problem.html#StructProblem"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.mach.struct_problem.StructProblem" title="Link to this definition">¶</a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">tacs.mach.struct_problem.</span></span><span class="sig-name descname"><span class="pre">StructProblem</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">staticProblem</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">FEAAssembler</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">DVGeo</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">loadFile</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/mach/struct_problem.html#StructProblem"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.mach.struct_problem.StructProblem" title="Link to this definition">¶</a></dt>
 <dd><p>MACH StructProblem wrapper for pyTACS StaticProblem class</p>
 <p>Initialize the StructProblem.</p>
 <dl class="field-list simple">
@@ -134,7 +134,7 @@ generated from pyAerostructure.</p></li>
 </dl>
 <dl class="py property">
 <dt class="sig sig-object py" id="tacs.mach.struct_problem.StructProblem.name">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">name</span></span><a class="headerlink" href="#tacs.mach.struct_problem.StructProblem.name" title="Link to this definition">¶</a></dt>
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">name</span></span><a class="headerlink" href="#tacs.mach.struct_problem.StructProblem.name" title="Link to this definition">¶</a></dt>
 <dd><p>Get the name of the structural problem.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
@@ -148,7 +148,7 @@ generated from pyAerostructure.</p></li>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="tacs.mach.struct_problem.StructProblem.callCounter">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">callCounter</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.15)"><span class="pre">int</span></a></em><a class="headerlink" href="#tacs.mach.struct_problem.StructProblem.callCounter" title="Link to this definition">¶</a></dt>
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">callCounter</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.15)"><span class="pre">int</span></a></span><a class="headerlink" href="#tacs.mach.struct_problem.StructProblem.callCounter" title="Link to this definition">¶</a></dt>
 <dd><p>Get the call counter for the underlying static problem.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
@@ -162,7 +162,7 @@ generated from pyAerostructure.</p></li>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="tacs.mach.struct_problem.StructProblem.Fext">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Fext</span></span><a class="headerlink" href="#tacs.mach.struct_problem.StructProblem.Fext" title="Link to this definition">¶</a></dt>
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">Fext</span></span><a class="headerlink" href="#tacs.mach.struct_problem.StructProblem.Fext" title="Link to this definition">¶</a></dt>
 <dd><p>Get the external aerodynamic force vector.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
@@ -176,7 +176,7 @@ generated from pyAerostructure.</p></li>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="tacs.mach.struct_problem.StructProblem.phi">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">phi</span></span><a class="headerlink" href="#tacs.mach.struct_problem.StructProblem.phi" title="Link to this definition">¶</a></dt>
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">phi</span></span><a class="headerlink" href="#tacs.mach.struct_problem.StructProblem.phi" title="Link to this definition">¶</a></dt>
 <dd><p>Get the adjoint vector.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
@@ -190,7 +190,7 @@ generated from pyAerostructure.</p></li>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="tacs.mach.struct_problem.StructProblem.pLoad">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">pLoad</span></span><a class="headerlink" href="#tacs.mach.struct_problem.StructProblem.pLoad" title="Link to this definition">¶</a></dt>
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">pLoad</span></span><a class="headerlink" href="#tacs.mach.struct_problem.StructProblem.pLoad" title="Link to this definition">¶</a></dt>
 <dd><p>The contribution of the aerodynamic adjoint to the structural
 adjoint RHS. This term is given by dAdu^T*psi and is subtracted
 from the structural adjoint RHS.</p>
@@ -206,7 +206,7 @@ from the structural adjoint RHS.</p>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="tacs.mach.struct_problem.StructProblem.dSdu">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">dSdu</span></span><a class="headerlink" href="#tacs.mach.struct_problem.StructProblem.dSdu" title="Link to this definition">¶</a></dt>
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">dSdu</span></span><a class="headerlink" href="#tacs.mach.struct_problem.StructProblem.dSdu" title="Link to this definition">¶</a></dt>
 <dd><p>Get the product of the derivative of structural residual with
 respect to state variables and the structural adjoint vector.</p>
 <dl class="field-list simple">
@@ -223,7 +223,7 @@ vector.</p>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="tacs.mach.struct_problem.StructProblem.adjRHS">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">adjRHS</span></span><a class="headerlink" href="#tacs.mach.struct_problem.StructProblem.adjRHS" title="Link to this definition">¶</a></dt>
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">adjRHS</span></span><a class="headerlink" href="#tacs.mach.struct_problem.StructProblem.adjRHS" title="Link to this definition">¶</a></dt>
 <dd><p>Get the adjoint right-hand side vector.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
@@ -237,7 +237,7 @@ vector.</p>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="tacs.mach.struct_problem.StructProblem.dIdu">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">dIdu</span></span><a class="headerlink" href="#tacs.mach.struct_problem.StructProblem.dIdu" title="Link to this definition">¶</a></dt>
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">dIdu</span></span><a class="headerlink" href="#tacs.mach.struct_problem.StructProblem.dIdu" title="Link to this definition">¶</a></dt>
 <dd><p>Get the derivative of the function with respect to state variables.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
@@ -251,7 +251,7 @@ vector.</p>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="tacs.mach.struct_problem.StructProblem.matVecRHS">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">matVecRHS</span></span><a class="headerlink" href="#tacs.mach.struct_problem.StructProblem.matVecRHS" title="Link to this definition">¶</a></dt>
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">matVecRHS</span></span><a class="headerlink" href="#tacs.mach.struct_problem.StructProblem.matVecRHS" title="Link to this definition">¶</a></dt>
 <dd><p>Get the matrix-vector product right-hand side vector.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
@@ -265,7 +265,7 @@ vector.</p>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="tacs.mach.struct_problem.StructProblem.matVecSolve">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">matVecSolve</span></span><a class="headerlink" href="#tacs.mach.struct_problem.StructProblem.matVecSolve" title="Link to this definition">¶</a></dt>
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">matVecSolve</span></span><a class="headerlink" href="#tacs.mach.struct_problem.StructProblem.matVecSolve" title="Link to this definition">¶</a></dt>
 <dd><p>Get the matrix-vector solve vector.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
@@ -709,7 +709,7 @@ This is typically only used with aerostructural analysis.</p>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="tacs.mach.struct_problem.StructProblem.evalFuncs">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">evalFuncs</span></span><a class="headerlink" href="#tacs.mach.struct_problem.StructProblem.evalFuncs" title="Link to this definition">¶</a></dt>
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">evalFuncs</span></span><a class="headerlink" href="#tacs.mach.struct_problem.StructProblem.evalFuncs" title="Link to this definition">¶</a></dt>
 <dd><p>Get strings for added evaluation functions.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
