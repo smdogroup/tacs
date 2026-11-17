@@ -448,10 +448,10 @@ void TACSShellElement<quadrature, basis, director, model>::addJacobian(
   // Second derivatives required for the director
   TacsScalar d2d[dsize * dsize], d2du[usize * dsize];
   TacsScalar d2Tdotd[dsize * dsize], d2Tdotu[usize * dsize];
-  memset(d2d, 0, dsize * dsize * sizeof(TacsScalar));
-  memset(d2du, 0, usize * dsize * sizeof(TacsScalar));
-  memset(d2Tdotd, 0, dsize * dsize * sizeof(TacsScalar));
-  memset(d2Tdotu, 0, usize * dsize * sizeof(TacsScalar));
+  memset(d2d, 0, sizeof(TacsScalar) * dsize * dsize);
+  memset(d2du, 0, sizeof(TacsScalar) * usize * dsize);
+  memset(d2Tdotd, 0, sizeof(TacsScalar) * dsize * dsize);
+  memset(d2Tdotu, 0, sizeof(TacsScalar) * usize * dsize);
 
   // Zero the contributions to the tying strain derivatives
   TacsScalar dety[basis::NUM_TYING_POINTS];
@@ -473,7 +473,7 @@ void TACSShellElement<quadrature, basis, director, model>::addJacobian(
   TacsScalar etn[num_nodes], detn[num_nodes];
   TacsScalar d2etn[num_nodes * num_nodes];
   memset(detn, 0, num_nodes * sizeof(TacsScalar));
-  memset(d2etn, 0, num_nodes * num_nodes * sizeof(TacsScalar));
+  memset(d2etn, 0, sizeof(TacsScalar) * num_nodes * num_nodes);
 
   // Store information about the transformation and derivatives at each node for
   // the drilling degrees of freedom
@@ -645,13 +645,13 @@ void TACSShellElement<quadrature, basis, director, model>::getMatType(
     ElementMatrixType matType, int elemIndex, double time,
     const TacsScalar Xpts[], const TacsScalar vars[], TacsScalar mat[]) {
   memset(mat, 0,
-         vars_per_node * num_nodes * vars_per_node * num_nodes *
-             sizeof(TacsScalar));
+         sizeof(TacsScalar) * vars_per_node * num_nodes * vars_per_node *
+             num_nodes);
   TacsScalar alpha, beta, gamma;
   alpha = beta = gamma = 0.0;
   // Create dummy zero vector for dvars and ddvars
   TacsScalar zeros[vars_per_node * num_nodes];
-  memset(zeros, 0, vars_per_node * num_nodes * sizeof(TacsScalar));
+  memset(zeros, 0, sizeof(TacsScalar) * vars_per_node * num_nodes);
 
   // Set alpha or gamma based on if this is a stiffness or mass matrix
   if (matType == TACS_STIFFNESS_MATRIX) {
@@ -677,12 +677,12 @@ void TACSShellElement<quadrature, basis, director, model>::getMatType(
     TacsScalar d2d[dsize * dsize], d2du[usize * dsize];
     TacsScalar d2dd[dsize * dsize], d2dud[usize * dsize];
     TacsScalar d2Tdotd[dsize * dsize], d2Tdotu[usize * dsize];
-    memset(d2d, 0, dsize * dsize * sizeof(TacsScalar));
-    memset(d2du, 0, usize * dsize * sizeof(TacsScalar));
-    memset(d2dd, 0, dsize * dsize * sizeof(TacsScalar));
-    memset(d2dud, 0, usize * dsize * sizeof(TacsScalar));
-    memset(d2Tdotd, 0, dsize * dsize * sizeof(TacsScalar));
-    memset(d2Tdotu, 0, usize * dsize * sizeof(TacsScalar));
+    memset(d2d, 0, sizeof(TacsScalar) * dsize * dsize);
+    memset(d2du, 0, sizeof(TacsScalar) * usize * dsize);
+    memset(d2dd, 0, sizeof(TacsScalar) * dsize * dsize);
+    memset(d2dud, 0, sizeof(TacsScalar) * usize * dsize);
+    memset(d2Tdotd, 0, sizeof(TacsScalar) * dsize * dsize);
+    memset(d2Tdotu, 0, sizeof(TacsScalar) * usize * dsize);
 
     // Zero the contributions to the tying strain derivatives
     TacsScalar dety[basis::NUM_TYING_POINTS];
@@ -715,7 +715,7 @@ void TACSShellElement<quadrature, basis, director, model>::getMatType(
         detnd[num_nodes];
     TacsScalar d2etn[num_nodes * num_nodes];
     memset(detn, 0, num_nodes * sizeof(TacsScalar));
-    memset(d2etn, 0, num_nodes * num_nodes * sizeof(TacsScalar));
+    memset(d2etn, 0, sizeof(TacsScalar) * num_nodes * num_nodes);
     memset(detnd, 0, num_nodes * sizeof(TacsScalar));
 
     // Store information about the transformation and derivatives at each node

@@ -407,7 +407,7 @@ int TacsTestElementJacobian(TACSElement *element, int elemIndex, double time,
   double beta = (1.0 * rand()) / RAND_MAX;
   double gamma = (1.0 * rand()) / RAND_MAX;
 
-  memset(mat, 0, nvars * nvars * sizeof(TacsScalar));
+  memset(mat, 0, sizeof(TacsScalar) * nvars * nvars);
   element->addJacobian(elemIndex, time, alpha, beta, gamma, Xpts, vars, dvars,
                        ddvars, res, mat);
 
@@ -552,7 +552,7 @@ int TacsTestElementMatFreeJacobian(
   double beta = (1.0 * rand()) / RAND_MAX;
   double gamma = (1.0 * rand()) / RAND_MAX;
 
-  memset(mat, 0, nvars * nvars * sizeof(TacsScalar));
+  memset(mat, 0, sizeof(TacsScalar) * nvars * nvars);
   element->addJacobian(elemIndex, time, alpha, beta, gamma, Xpts, vars, dvars,
                        ddvars, res, mat);
 
@@ -999,7 +999,7 @@ int TacsTestElementMatXptSens(TACSElement *element, ElementMatrixType matType,
   for (int kk = 0; kk < 3 * nnodes; kk++) {
     xPert[kk] = 1.0;
     // Perturb the nodes in the forward sense
-    memset(mat, 0, nvars * nvars * sizeof(TacsScalar));
+    memset(mat, 0, sizeof(TacsScalar) * nvars * nvars);
     TacsForwardDiffPerturb(Xp, 3 * nnodes, Xpts, xPert, dh);
     element->getMatType(matType, elemIndex, time, Xp, vars, mat);
     TacsScalar forward = 0.0;
@@ -1012,7 +1012,7 @@ int TacsTestElementMatXptSens(TACSElement *element, ElementMatrixType matType,
     TacsScalar backward = 0.0;
 #ifndef TACS_USE_COMPLEX
     // Perturb the nodes in the reverse sense
-    memset(mat, 0, nvars * nvars * sizeof(TacsScalar));
+    memset(mat, 0, sizeof(TacsScalar) * nvars * nvars);
     TacsBackwardDiffPerturb(Xp, 3 * nnodes, Xpts, xPert, dh);
     element->getMatType(matType, elemIndex, time, Xp, vars, mat);
     for (int i = 0; i < nvars; i++) {
@@ -1164,7 +1164,7 @@ int TacsTestElementBasisFunctions(TACSElementBasis *basis, double dh,
   // Create an array to store the values of the adjoint-residual
   // product
   double *result = new double[nparams * nnodes];
-  memset(result, 0, nparams * nnodes * sizeof(double));
+  memset(result, 0, sizeof(double) * nparams * nnodes);
 
   // Generate a random array of values
   double *fd = new double[nparams * nnodes];
@@ -1862,7 +1862,7 @@ int TacsTestElementModelJacobian(TACSElementModel *model, int elemIndex,
   for (int k = 0; k < Jac_nnz; k++) {
     TacsScalar pUt[3 * MAX_VARS_PER_NODE], pUx[3 * MAX_VARS_PER_NODE];
     memcpy(pUt, Ut, 3 * vars_per_node * sizeof(TacsScalar));
-    memcpy(pUx, Ux, num_params * vars_per_node * sizeof(TacsScalar));
+    memcpy(pUx, Ux, sizeof(TacsScalar) * num_params * vars_per_node);
 
     int ix = Jac_pairs[2 * k];
     int jx = Jac_pairs[2 * k + 1];
@@ -2113,7 +2113,7 @@ int TacsTestElementModelAdjXptSensProduct(TACSElementModel *model,
   TacsScalar fdUx[3 * MAX_VARS_PER_NODE];
   for (int k = 0; k < num_params * vars_per_node; k++) {
     TacsScalar pUx[3 * MAX_VARS_PER_NODE];
-    memcpy(pUx, Ux, num_params * vars_per_node * sizeof(TacsScalar));
+    memcpy(pUx, Ux, sizeof(TacsScalar) * num_params * vars_per_node);
 
 #ifdef TACS_USE_COMPLEX
     pUx[k] = Ux[k] + TacsScalar(0.0, dh);
@@ -2169,7 +2169,7 @@ int TacsTestElementModelAdjXptSensProduct(TACSElementModel *model,
   TacsScalar fdPsix[3 * MAX_VARS_PER_NODE];
   for (int k = 0; k < num_params * vars_per_node; k++) {
     TacsScalar pPsix[3 * MAX_VARS_PER_NODE];
-    memcpy(pPsix, Psix, num_params * vars_per_node * sizeof(TacsScalar));
+    memcpy(pPsix, Psix, sizeof(TacsScalar) * num_params * vars_per_node);
 
 #ifdef TACS_USE_COMPLEX
     pPsix[k] = Psix[k] + TacsScalar(0.0, dh);

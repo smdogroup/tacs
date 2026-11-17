@@ -382,7 +382,7 @@ void TACSPanelAnalysis::setGeoDesignDependence(TacsScalar *_XptConst,
 
     memcpy(geoDvNums, _dvNums, nDvGeo * sizeof(int));
     memcpy(XptConst, _XptConst, 2 * nnodes * sizeof(TacsScalar));
-    memcpy(XptLin, _XptLin, 2 * nnodes * nDvGeo * sizeof(TacsScalar));
+    memcpy(XptLin, _XptLin, sizeof(TacsScalar) * 2 * nnodes * nDvGeo);
     memcpy(geoDvs, _geoDvs, nDvGeo * sizeof(TacsScalar));
     memset(geoLb, 0, nDvGeo * sizeof(TacsScalar));
     memset(geoUb, 0, nDvGeo * sizeof(TacsScalar));
@@ -1588,7 +1588,7 @@ did not converge to zero\n",
       BLASgemm("N", "N", &n, &nv, &m, &a, V, &n, Z, &ldz, &b, eigvecs, &n);
 
       // Copy over the new, frozen, converged eigenvalues
-      memcpy(V, eigvecs, n * nv * sizeof(TacsScalar));
+      memcpy(V, eigvecs, sizeof(TacsScalar) * n * nv);
 
       // Pick a new starting Lanczos vector that is a linear
       // combination of the remaining eigenvalues
@@ -1869,13 +1869,13 @@ int TACSPanelAnalysis::computeBucklingLoads(const TacsScalar segmentLoads[],
 
     // Copy over the eigenvalues and eigenvectors that are required
     memcpy(eigvals, eigs, neigs * sizeof(TacsScalar));
-    memcpy(eigvecs, Z, neigs * nvars * sizeof(TacsScalar));
+    memcpy(eigvecs, Z, sizeof(TacsScalar) * neigs * nvars);
 
     if (two_sided) {
       // Copy the remaining eigenvalues if required - two sided problem
       memcpy(&eigvals[neigs], &eigs[nvars - neigs], neigs * sizeof(TacsScalar));
       memcpy(&eigvecs[neigs * nvars], &Z[(nvars - neigs) * nvars],
-             neigs * nvars * sizeof(TacsScalar));
+             sizeof(TacsScalar) * neigs * nvars);
     }
 
     if (info != 0) {
@@ -2257,7 +2257,7 @@ int TACSPanelAnalysis::computeFrequencies(int neigs, TacsScalar eigvals[],
 
     // Copy over the eigenvalues and eigenvectors that are required
     memcpy(eigvals, eigs, neigs * sizeof(TacsScalar));
-    memcpy(eigvecs, Z, neigs * nvars * sizeof(TacsScalar));
+    memcpy(eigvecs, Z, sizeof(TacsScalar) * neigs * nvars);
 
     if (info != 0) {
       fprintf(stderr,

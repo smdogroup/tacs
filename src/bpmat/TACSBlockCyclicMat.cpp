@@ -1708,7 +1708,7 @@ void TACSBlockCyclicMat::init_row_counts() {
   if (get_proc_row_column(rank, &proc_row, &proc_col)) {
     // Compute the expected number of recvs for this processor
     int *row_sum_recv = new int[nrows * npcols];
-    memset(row_sum_recv, 0, nrows * npcols * sizeof(int));
+    memset(row_sum_recv, 0, sizeof(int) * nrows * npcols);
 
     // Compute the number of local updates for row i in L^{-1}
     lower_row_sum_count = new int[nrows];
@@ -1750,7 +1750,7 @@ void TACSBlockCyclicMat::init_row_counts() {
     }
 
     // Reset the row sum recv count to zero
-    memset(row_sum_recv, 0, nrows * npcols * sizeof(int));
+    memset(row_sum_recv, 0, sizeof(int) * nrows * npcols);
 
     // Compute the number of for updates for row i in U^{-1}
     upper_row_sum_count = new int[nrows];
@@ -2571,7 +2571,7 @@ void TACSBlockCyclicMat::factor() {
           n_gemm++;
           TacsAddFlops(2 * bi * bi * bj);
 
-          memcpy(&Lvals[np], temp_block, bi * bj * sizeof(TacsScalar));
+          memcpy(&Lvals[np], temp_block, sizeof(TacsScalar) * bi * bj);
         }
       }
     }

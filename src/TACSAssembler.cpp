@@ -4363,7 +4363,7 @@ void TACSAssembler::assembleJacobian(TacsScalar alpha, TacsScalar beta,
 
       // Compute and add the contributions to the Jacobian
       memset(elemRes, 0, nvars * sizeof(TacsScalar));
-      memset(elemMat, 0, nvars * nvars * sizeof(TacsScalar));
+      memset(elemMat, 0, sizeof(TacsScalar) * nvars * nvars);
       elements[i]->addJacobian(i, time, alpha, beta, gamma, elemXpts, vars,
                                dvars, ddvars, elemRes, elemMat);
 
@@ -4567,7 +4567,7 @@ void TACSAssembler::assembleMatCombo(ElementMatrixType matTypes[],
           aux_count++;
         }
       } else {
-        memset(auxElemMat, 0, maxNVar * maxNVar * sizeof(TacsScalar));
+        memset(auxElemMat, 0, sizeof(TacsScalar) * maxNVar * maxNVar);
         while (aux_count < naux && aux[aux_count].num == i) {
           aux[aux_count].elem->getMatType(matTypes[j], i, time, elemXpts, vars,
                                           auxElemMat);
@@ -4801,7 +4801,7 @@ void TACSAssembler::addDVSens(TacsScalar coef, int numFuncs,
               elements[elemNum]->getDesignVarNums(elemNum, maxDVs, dvNums);
 
           // Evaluate the element-wise sensitivity of the function
-          memset(fdvSens, 0, numDVs * designVarsPerNode * sizeof(TacsScalar));
+          memset(fdvSens, 0, sizeof(TacsScalar) * numDVs * designVarsPerNode);
           funcs[k]->addElementDVSens(elemNum, elements[elemNum], time, coef,
                                      elemXpts, vars, dvars, ddvars, maxDVs,
                                      fdvSens);
@@ -4825,7 +4825,7 @@ void TACSAssembler::addDVSens(TacsScalar coef, int numFuncs,
               elements[elemNum]->getDesignVarNums(elemNum, maxDVs, dvNums);
 
           // Evaluate the element-wise sensitivity of the function
-          memset(fdvSens, 0, numDVs * designVarsPerNode * sizeof(TacsScalar));
+          memset(fdvSens, 0, sizeof(TacsScalar) * numDVs * designVarsPerNode);
           funcs[k]->addElementDVSens(elemNum, elements[elemNum], time, coef,
                                      elemXpts, vars, dvars, ddvars, maxDVs,
                                      fdvSens);
@@ -5080,7 +5080,7 @@ void TACSAssembler::addAdjointResProducts(TacsScalar scale, int numAdjoints,
 
     // Get the adjoint variables
     for (int k = 0; k < numAdjoints; k++) {
-      memset(fdvSens, 0, numDVs * designVarsPerNode * sizeof(TacsScalar));
+      memset(fdvSens, 0, sizeof(TacsScalar) * numDVs * designVarsPerNode);
 
       // Get the element adjoint vector
       adjoint[k]->getValues(len, nodes, elemAdjoint);
@@ -5100,7 +5100,7 @@ void TACSAssembler::addAdjointResProducts(TacsScalar scale, int numAdjoints,
 
         // Get the adjoint variables
         for (int k = 0; k < numAdjoints; k++) {
-          memset(fdvSens, 0, numDVs * designVarsPerNode * sizeof(TacsScalar));
+          memset(fdvSens, 0, sizeof(TacsScalar) * numDVs * designVarsPerNode);
 
           // Get the element adjoint vector
           adjoint[k]->getValues(len, nodes, elemAdjoint);
@@ -5257,7 +5257,7 @@ void TACSAssembler::addMatDVSensInnerProduct(TacsScalar scale,
 
     // Get the design variables for this element
     int numDVs = elements[i]->getDesignVarNums(i, maxDVs, dvNums);
-    memset(fdvSens, 0, numDVs * designVarsPerNode * sizeof(TacsScalar));
+    memset(fdvSens, 0, sizeof(TacsScalar) * numDVs * designVarsPerNode);
 
     // Add the contribution to the design variable vector
     elements[i]->addMatDVSensInnerProduct(matType, i, time, scale, elemPsi,
@@ -5449,7 +5449,7 @@ void TACSAssembler::addJacobianVecProduct(TacsScalar scale, TacsScalar alpha,
     int nvars = elements[i]->getNumVariables();
 
     // Compute and add the contributions to the Jacobian
-    memset(elemMat, 0, nvars * nvars * sizeof(TacsScalar));
+    memset(elemMat, 0, sizeof(TacsScalar) * nvars * nvars);
     elements[i]->addJacobian(i, time, alpha, beta, gamma, elemXpts, vars, dvars,
                              ddvars, yvars, elemMat);
 
@@ -6057,7 +6057,7 @@ void TACSAssembler::getElementOutputData(ElementType elem_type, int write_flag,
     len += elements[i]->getNumNodes();
   }
   TacsScalar *data = new TacsScalar[len * nvals];
-  memset(data, 0, len * nvals * sizeof(TacsScalar));
+  memset(data, 0, sizeof(TacsScalar) * len * nvals);
 
   // Retrieve pointers to temporary storage
   TacsScalar *elemXpts, *vars, *dvars, *ddvars;

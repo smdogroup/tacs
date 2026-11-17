@@ -16,6 +16,10 @@ on:
         required: false
         default: false
 
+# The docs deployment step pushes to the gh-pages branch.
+permissions:
+  contents: write
+
 jobs:
   # This job is called test_docs.
   unit_test_and_docs:

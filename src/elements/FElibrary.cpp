@@ -184,7 +184,7 @@ void bspline_basis_derivative(double *N, const int idx, const double u,
                               double *work) {
   if (ideriv >= ku) {
     // Set all higher-order derivatives to zero
-    memset(&N[ku * ku], 0, (ideriv + 1 - ku) * ku * sizeof(double));
+    memset(&N[ku * ku], 0, sizeof(double) * (ideriv + 1 - ku) * ku);
 
     // set the maximum derivative to ideriv
     ideriv = ku - 1;

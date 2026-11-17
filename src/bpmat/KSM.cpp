@@ -84,7 +84,7 @@ void TACSBcMap::addBC(int node, int nvals, const int *bc_vars,
     TacsScalar *temp_values = new TacsScalar[bsize * max_size];
     memcpy(temp_nodes, nodes, nbcs * sizeof(int));
     memcpy(temp_vars, vars, nbcs * sizeof(int));
-    memcpy(temp_values, values, bsize * nbcs * sizeof(TacsScalar));
+    memcpy(temp_values, values, sizeof(TacsScalar) * bsize * nbcs);
 
     // Free the old arrays
     delete[] nodes;
@@ -145,7 +145,7 @@ void TACSBcMap::addBinaryFlagBC(int node, int _vars) {
     TacsScalar *temp_values = new TacsScalar[bsize * max_size];
     memcpy(temp_nodes, nodes, nbcs * sizeof(int));
     memcpy(temp_vars, vars, nbcs * sizeof(int));
-    memcpy(temp_values, values, bsize * nbcs * sizeof(TacsScalar));
+    memcpy(temp_values, values, sizeof(TacsScalar) * bsize * nbcs);
 
     // Free the old arrays
     delete[] nodes;
@@ -1065,7 +1065,7 @@ void GCROT::init(TACSMat *_mat, TACSPc *_pc, int _outer, int _max_outer,
 
   memset(H, 0, size * sizeof(TacsScalar));
   memset(res, 0, (msub + 1) * sizeof(TacsScalar));
-  memset(B, 0, msub * outer * sizeof(TacsScalar));
+  memset(B, 0, sizeof(TacsScalar) * msub * outer);
 
   // Allocate the terms that represent the unitary Q matrix
   // in the QR factorixation of H

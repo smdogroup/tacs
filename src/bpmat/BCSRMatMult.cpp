@@ -501,7 +501,7 @@ void BCSRMatVecMultTransposeAdd(BCSRMatData *data, TacsScalar *inVec,
 
   // Copy addVec to outVec if they are different vectors
   if (outVec != addVec) {
-    memcpy(outVec, addVec, bsize * ncols * sizeof(TacsScalar));
+    memcpy(outVec, addVec, sizeof(TacsScalar) * bsize * ncols);
   }
 
   int one = 1;

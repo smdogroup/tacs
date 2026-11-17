@@ -193,10 +193,6 @@ void write_stiffened_panel_axial(const char *file_name, int Nx, int nrepeat,
             seid);
   }
 
-  delete[] Xpanel;
-  delete[] Ysurf;
-  delete[] Zstiff;
-
   /*
     Write the element connectivity
   */
@@ -345,6 +341,9 @@ void write_stiffened_panel_axial(const char *file_name, int Nx, int nrepeat,
     }
   }
 
+  delete[] Xpanel;
+  delete[] Ysurf;
+  delete[] Zstiff;
   delete[] surf_node_nums;
   delete[] stiff_node_nums;
 
