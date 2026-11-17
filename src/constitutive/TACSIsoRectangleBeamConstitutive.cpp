@@ -8,7 +8,7 @@ TACSIsoRectangleBeamConstitutive::TACSIsoRectangleBeamConstitutive(
     int _thickness_num, int _buckle_length_num, TacsScalar _lb_width,
     TacsScalar _ub_width, TacsScalar _lb_thickness, TacsScalar _ub_thickness,
     TacsScalar _w_offset, TacsScalar _t_offset,
-    TacsScalar _buckle_length_factor) {
+    TacsScalar _buckle_length_factor, TacsScalar _nsm) {
   props = properties;
   props->incref();
 
@@ -34,6 +34,7 @@ TACSIsoRectangleBeamConstitutive::TACSIsoRectangleBeamConstitutive(
   kcorr = 10.0 * (1.0 + nu) / (12.0 + 11.0 * nu);
 
   ks_weight = 100.0;
+  setNonStructuralMass(_nsm);
 }
 
 TACSIsoRectangleBeamConstitutive::~TACSIsoRectangleBeamConstitutive() {
@@ -135,12 +136,17 @@ void TACSIsoRectangleBeamConstitutive::evalMassMoments(int elemIndex,
   TacsScalar delta_y = t_offset * thickness;
   TacsScalar delta_z = w_offset * width;
 
-  moments[0] = rho * A;
-  moments[1] = rho * delta_y * A;  // centroid offset y?
-  moments[2] = rho * delta_z * A;  // centroid offset z?
-  moments[3] = rho * Iz;
-  moments[4] = rho * Iy;
-  moments[5] = -rho * Iyz;  // -rho * Iyz
+  // NSM sits at (delta_y, delta_z) — same location as the cross-section
+  // centroid. Full parallel-axis contributions are added for all six moment
+  // entries. delta_y = -y_com and delta_z = -z_com (negative convention from
+  // pytacs.py), so negate moments[1] and moments[2] to give positive first
+  // mass moments as required by the beam element kinetic energy formula.
+  moments[0] = rho * A + nsm;
+  moments[1] = -(rho * delta_y * A + nsm * delta_y);
+  moments[2] = -(rho * delta_z * A + nsm * delta_z);
+  moments[3] = rho * Iz + nsm * delta_y * delta_y;
+  moments[4] = rho * Iy + nsm * delta_z * delta_z;
+  moments[5] = -rho * Iyz + nsm * delta_y * delta_z;
 }
 
 void TACSIsoRectangleBeamConstitutive::addMassMomentsDVSens(
@@ -165,8 +171,12 @@ void TACSIsoRectangleBeamConstitutive::addMassMomentsDVSens(
     evalMomentsOfInertiaSens(width_num, sI);
     TacsScalar dIy = sI[0], dIz = sI[1], dIyz = sI[2];
 
-    dfdx[index] += rho * (scale[0] * dA + scale[1] * dAy + scale[2] * dAz +
+    // moments[1] and moments[2] are negated, so their derivatives are negated.
+    dfdx[index] += rho * (scale[0] * dA - scale[1] * dAy - scale[2] * dAz +
                           scale[3] * dIz + scale[4] * dIy - scale[5] * dIyz);
+    // NSM at (delta_y, delta_z): d/d(width) terms (only delta_z varies)
+    dfdx[index] += nsm * w_offset *
+                   (-scale[2] + 2.0 * delta_z * scale[4] + delta_y * scale[5]);
     index++;
   }
   if (thickness_num >= 0) {
@@ -177,8 +187,12 @@ void TACSIsoRectangleBeamConstitutive::addMassMomentsDVSens(
     evalMomentsOfInertiaSens(thickness_num, sI);
     TacsScalar dIy = sI[0], dIz = sI[1], dIyz = sI[2];
 
-    dfdx[index] += rho * (scale[0] * dA + scale[1] * dAy + scale[2] * dAz +
+    // moments[1] and moments[2] are negated, so their derivatives are negated.
+    dfdx[index] += rho * (scale[0] * dA - scale[1] * dAy - scale[2] * dAz +
                           scale[3] * dIz + scale[4] * dIy - scale[5] * dIyz);
+    // NSM at (delta_y, delta_z): d/d(thickness) terms (only delta_y varies)
+    dfdx[index] += nsm * t_offset *
+                   (-scale[1] + 2.0 * delta_y * scale[3] + delta_z * scale[5]);
     index++;
   }
 }
@@ -197,7 +211,7 @@ TacsScalar TACSIsoRectangleBeamConstitutive::evalDensity(int elemIndex,
   TacsScalar rho = props->getDensity();
   TacsScalar A = evalArea();
 
-  return rho * A;
+  return rho * A + nsm;
 }
 
 void TACSIsoRectangleBeamConstitutive::addDensityDVSens(
@@ -231,12 +245,16 @@ void TACSIsoRectangleBeamConstitutive::evalStress(int elemIndex,
   TacsScalar Iy = I[0], Iz = I[1], Iyz = I[2];
   TacsScalar J = evalTorsionalConstant();
 
+  const TacsScalar kGA = kcorr * G * A;
+
   s[0] = E * A * (e[0] - delta_y * e[2] - delta_z * e[3]);
-  s[1] = G * J * e[1];
+  // Torsion augmented by kGA parallel-axis term; coupling to shear from offset
+  s[1] = (G * J + (delta_y * delta_y + delta_z * delta_z) * kGA) * e[1] +
+         delta_z * kGA * e[4] - delta_y * kGA * e[5];
   s[2] = E * (Iz * e[2] - delta_y * A * e[0] - Iyz * e[3]);
   s[3] = E * (Iy * e[3] - delta_z * A * e[0] - Iyz * e[2]);
-  s[4] = kcorr * G * A * e[4];
-  s[5] = kcorr * G * A * e[5];
+  s[4] = kGA * (e[4] + delta_z * e[1]);
+  s[5] = kGA * (e[5] - delta_y * e[1]);
 }
 
 void TACSIsoRectangleBeamConstitutive::evalTangentStiffness(
@@ -251,66 +269,98 @@ void TACSIsoRectangleBeamConstitutive::evalTangentStiffness(
 
   memset(C, 0, NUM_TANGENT_STIFFNESS_ENTRIES * sizeof(TacsScalar));
 
+  const TacsScalar kGA = kcorr * G * A;
+
   C[0] = E * A;
   C[2] = -E * delta_y * A;
   C[3] = -E * delta_z * A;
-  C[6] = G * J;
+  // GJ augmented by kGA parallel-axis term; shear-torsion coupling from offset
+  C[6] = G * J + (delta_y * delta_y + delta_z * delta_z) * kGA;
+  C[9] = delta_z * kGA;  // torsion↔shear2 coupling (v-direction) from z-offset
+  C[10] =
+      -delta_y * kGA;  // torsion↔shear3 coupling (w-direction) from y-offset
   C[11] = E * Iz;
   C[12] = -E * Iyz;
   C[15] = E * Iy;
-  C[18] = kcorr * G * A;
-  C[20] = kcorr * G * A;
+  C[18] = kGA;
+  C[20] = kGA;
 }
 
 void TACSIsoRectangleBeamConstitutive::addStressDVSens(
     int elemIndex, TacsScalar scale, const double pt[], const TacsScalar X[],
     const TacsScalar e[], const TacsScalar psi[], int dvLen,
     TacsScalar dfdx[]) {
-  TacsScalar A = evalArea();
-  TacsScalar delta_y = t_offset * thickness;
-  TacsScalar delta_z = w_offset * width;
+  const TacsScalar A = evalArea();
+  const TacsScalar delta_y = t_offset * thickness;
+  const TacsScalar delta_z = w_offset * width;
+  const TacsScalar kGA = kcorr * G * A;
 
   int index = 0;
   if (width_num >= 0) {
-    TacsScalar ddelta_z = w_offset;
-    TacsScalar dA = evalAreaSens(width_num);
+    const TacsScalar ddelta_z = w_offset;  // d(delta_z)/d(width)
+    const TacsScalar dA = evalAreaSens(width_num);
+    const TacsScalar dkGA = kcorr * G * dA;
     TacsScalar sI[3];
     evalMomentsOfInertiaSens(width_num, sI);
-    TacsScalar dIy = sI[0], dIz = sI[1], dIyz = sI[2];
-    TacsScalar dJ = evalTorsionalConstantSens(width_num);
+    const TacsScalar dIy = sI[0], dIz = sI[1], dIyz = sI[2];
+    const TacsScalar dJ = evalTorsionalConstantSens(width_num);
 
-    dfdx[index] +=
-        scale *
-        (E *
-             (dA * e[0] - delta_y * dA * e[2] -
-              (delta_z * dA + ddelta_z * A) * e[3]) *
-             psi[0] +
-         G * dJ * e[1] * psi[1] +
-         E * (dIz * e[2] - dIyz * e[3] - delta_y * dA * e[0]) * psi[2] +
-         E * (dIy * e[3] - dIyz * e[2] - (delta_z * dA + ddelta_z * A) * e[0]) *
-             psi[3] +
-         kcorr * G * dA * e[4] * psi[4] + kcorr * G * dA * e[5] * psi[5]);
+    // d s[0] / d(width)
+    const TacsScalar ds0 = E * (dA * e[0] - delta_y * dA * e[2] -
+                                (delta_z * dA + ddelta_z * A) * e[3]);
+    // d s[1] / d(width): torsion + shear-coupling parallel-axis terms
+    const TacsScalar ds1 =
+        (G * dJ + dkGA * (delta_y * delta_y + delta_z * delta_z) +
+         2.0 * delta_z * ddelta_z * kGA) *
+            e[1] +
+        (ddelta_z * kGA + delta_z * dkGA) * e[4] - delta_y * dkGA * e[5];
+    // d s[2] / d(width)
+    const TacsScalar ds2 = E * (dIz * e[2] - delta_y * dA * e[0] - dIyz * e[3]);
+    // d s[3] / d(width)
+    const TacsScalar ds3 =
+        E * (dIy * e[3] - (delta_z * dA + ddelta_z * A) * e[0] - dIyz * e[2]);
+    // d s[4] / d(width): shear-torsion coupling
+    const TacsScalar ds4 =
+        dkGA * e[4] + (dkGA * delta_z + kGA * ddelta_z) * e[1];
+    // d s[5] / d(width): shear-torsion coupling (no ddelta_y term)
+    const TacsScalar ds5 = dkGA * e[5] - delta_y * dkGA * e[1];
+
+    dfdx[index] += scale * (ds0 * psi[0] + ds1 * psi[1] + ds2 * psi[2] +
+                            ds3 * psi[3] + ds4 * psi[4] + ds5 * psi[5]);
     index++;
   }
   if (thickness_num >= 0) {
-    TacsScalar ddelta_y = t_offset;
-    TacsScalar dA = evalAreaSens(thickness_num);
+    const TacsScalar ddelta_y = t_offset;  // d(delta_y)/d(thickness)
+    const TacsScalar dA = evalAreaSens(thickness_num);
+    const TacsScalar dkGA = kcorr * G * dA;
     TacsScalar sI[3];
     evalMomentsOfInertiaSens(thickness_num, sI);
-    TacsScalar dIy = sI[0], dIz = sI[1], dIyz = sI[2];
-    TacsScalar dJ = evalTorsionalConstantSens(thickness_num);
+    const TacsScalar dIy = sI[0], dIz = sI[1], dIyz = sI[2];
+    const TacsScalar dJ = evalTorsionalConstantSens(thickness_num);
 
-    dfdx[index] +=
-        scale *
-        (E *
-             (dA * e[0] - (delta_y * dA + ddelta_y * A) * e[2] -
-              delta_z * dA * e[3]) *
-             psi[0] +
-         G * dJ * e[1] * psi[1] +
-         E * (dIz * e[2] - dIyz * e[3] - (delta_y * dA + ddelta_y * A) * e[0]) *
-             psi[2] +
-         E * (dIy * e[3] - dIyz * e[2] - delta_z * dA * e[0]) * psi[3] +
-         kcorr * G * dA * e[4] * psi[4] + kcorr * G * dA * e[5] * psi[5]);
+    // d s[0] / d(thickness)
+    const TacsScalar ds0 =
+        E * (dA * e[0] - (delta_y * dA + ddelta_y * A) * e[2] -
+             delta_z * dA * e[3]);
+    // d s[1] / d(thickness): torsion + shear-coupling parallel-axis terms
+    const TacsScalar ds1 =
+        (G * dJ + dkGA * (delta_y * delta_y + delta_z * delta_z) +
+         2.0 * delta_y * ddelta_y * kGA) *
+            e[1] +
+        delta_z * dkGA * e[4] + (-ddelta_y * kGA - delta_y * dkGA) * e[5];
+    // d s[2] / d(thickness)
+    const TacsScalar ds2 =
+        E * (dIz * e[2] - (delta_y * dA + ddelta_y * A) * e[0] - dIyz * e[3]);
+    // d s[3] / d(thickness)
+    const TacsScalar ds3 = E * (dIy * e[3] - delta_z * dA * e[0] - dIyz * e[2]);
+    // d s[4] / d(thickness): shear-torsion coupling (no ddelta_z term)
+    const TacsScalar ds4 = dkGA * e[4] + delta_z * dkGA * e[1];
+    // d s[5] / d(thickness): shear-torsion coupling
+    const TacsScalar ds5 =
+        dkGA * e[5] - (delta_y * dkGA + ddelta_y * kGA) * e[1];
+
+    dfdx[index] += scale * (ds0 * psi[0] + ds1 * psi[1] + ds2 * psi[2] +
+                            ds3 * psi[3] + ds4 * psi[4] + ds5 * psi[5]);
     index++;
   }
 }

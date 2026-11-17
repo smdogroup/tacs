@@ -28,15 +28,15 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
     N_PROCS = 2  # this is how many MPI processes to use for this TestCase.
 
     FUNC_REFS = {
-        "load_set_000_cg_x": 0.49999999999999994,
-        "load_set_000_cg_y": -0.05,
-        "load_set_000_cg_z": 0.05,
-        "load_set_000_compliance": 286783.9285716017,
-        "load_set_000_ks_vmfailure": 15.833518185315949,
+        "load_set_000_cg_x": 0.5,
+        "load_set_000_cg_y": 0.049999999999999996,
+        "load_set_000_cg_z": -0.049999999999999996,
+        "load_set_000_compliance": 286783.92857141787,
+        "load_set_000_ks_vmfailure": 15.833518185310005,
         "load_set_000_mass": 27.000000000000004,
-        "load_set_000_x_disp": 0.34227078271035377,
-        "load_set_000_y_disp": -0.20790980211605073,
-        "load_set_000_z_disp": 2.4826507934089523,
+        "load_set_000_x_disp": 0.3422707827102377,
+        "load_set_000_y_disp": -0.2079098021160286,
+        "load_set_000_z_disp": 2.482650793408008,
     }
 
     def setup_tacs_problems(self, comm):
