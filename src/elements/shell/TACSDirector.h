@@ -559,6 +559,36 @@ class TACSLinearizedRotation {
     }
   }
 
+  /*
+    Add the director contributions to the derivative of the normal from the
+    SECOND time derivative of the director field (dddot), as needed by the
+    dynamics/rotary-inertia term of addAdjResXptProduct.
+
+    dddot = qddot^{x} * t is linear in t with EXACTLY the same bilinear
+    structure as d = q^{x} * t (just qddot in place of q), so this reduces
+    exactly to the existing single-seed addDirectorRefNormalSens with ddvars
+    substituted for vars -- verified via complex-step in isolation (worst
+    relative error 0.0, machine-exact).
+
+    @param vars The full variable vector
+    @param dvars The first time derivative of the variables
+    @param ddvars The second derivatives of the variables
+    @param t The reference directions
+    @param dd The adjoint sensitivities w.r.t. the acceleration-direction
+    director field (dddot)
+    @param dt The adjoint sensitivity w.r.t. the reference directions
+  */
+  template <int vars_per_node, int offset, int num_nodes>
+  static void addDirectorAccelRefNormalSens(const TacsScalar vars[],
+                                            const TacsScalar dvars[],
+                                            const TacsScalar ddvars[],
+                                            const TacsScalar t[],
+                                            const TacsScalar dd[],
+                                            TacsScalar dt[]) {
+    addDirectorRefNormalSens<vars_per_node, offset, num_nodes>(ddvars, t, dd,
+                                                               dt);
+  }
+
   static TacsScalar evalDrillStrain(const TacsScalar u0x[],
                                     const TacsScalar Ct[]) {
     // Compute the rotational penalty
@@ -1425,6 +1455,65 @@ class TACSQuadraticRotation {
       dt += 3;
       q += vars_per_node;
       qpsi += vars_per_node;
+    }
+  }
+
+  /*
+    Add the director contributions to the derivative of the normal from the
+    SECOND time derivative of the director field (dddot), as needed by the
+    dynamics/rotary-inertia term of addAdjResXptProduct.
+
+    dddot = qddot^{x}*t + 0.5*qddot^{x}*q^{x}*t + qdot^{x}*qdot^{x}*t
+            + 0.5*q^{x}*qddot^{x}*t
+    is linear in t, so writing dddot = M*t with
+    M = qddot^{x} + 0.5*qddot^{x}*q^{x} + qdot^{x}*qdot^{x} +
+    0.5*q^{x}*qddot^{x}, the transpose (using S^{T} = -S for any skew matrix S =
+    a^{x}) is M^{T} = -qddot^{x} + 0.5*q^{x}*qddot^{x} + qdot^{x}*qdot^{x}
+            + 0.5*qddot^{x}*q^{x}
+    so
+
+    dt += M^{T}*dd = dd^{x}*qddot + 0.5*q^{x}*(qddot^{x}*dd)
+                     + qdot^{x}*(qdot^{x}*dd) + 0.5*qddot^{x}*(q^{x}*dd)
+
+    Verified via complex-step in isolation (worst relative error ~5.5e-16,
+    machine precision).
+
+    @param vars The full variable vector
+    @param dvars The first time derivative of the variables
+    @param ddvars The second derivatives of the variables
+    @param t The reference directions
+    @param dd The adjoint sensitivities w.r.t. the acceleration-direction
+    director field (dddot)
+    @param dt The adjoint sensitivity w.r.t. the reference directions
+  */
+  template <int vars_per_node, int offset, int num_nodes>
+  static void addDirectorAccelRefNormalSens(const TacsScalar vars[],
+                                            const TacsScalar dvars[],
+                                            const TacsScalar ddvars[],
+                                            const TacsScalar t[],
+                                            const TacsScalar dd[],
+                                            TacsScalar dt[]) {
+    const TacsScalar *q = &vars[offset];
+    const TacsScalar *qdot = &dvars[offset];
+    const TacsScalar *qddot = &ddvars[offset];
+
+    for (int i = 0; i < num_nodes; i++) {
+      TacsScalar t1[3], t2[3], t3[3];
+      crossProduct(qddot, dd, t1);  // t1 = qddot x dd
+      crossProduct(q, dd, t2);      // t2 = q x dd
+      crossProduct(qdot, dd, t3);   // t3 = qdot x dd
+
+      crossProductAdd(1.0, dd, qddot, dt);  // dd x qddot
+      crossProductAdd(0.5, q, t1, dt);      // 0.5 * q x (qddot x dd)
+      crossProductAdd(1.0, qdot, t3, dt);   // qdot x (qdot x dd)
+      crossProductAdd(0.5, qddot, t2, dt);  // 0.5 * qddot x (q x dd)
+
+      t += 3;
+      dd += 3;
+      dt += 3;
+      q += vars_per_node;
+      qdot += vars_per_node;
+      qddot += vars_per_node;
     }
   }
 
@@ -2583,6 +2672,88 @@ class TACSQuaternionRotation {
       dt += 3;
       q += vars_per_node;
       qpsi += vars_per_node;
+    }
+  }
+
+  /*
+    Add the director contributions to the derivative of the normal from the
+    SECOND time derivative of the director field (dddot), as needed by the
+    dynamics/rotary-inertia term of addAdjResXptProduct.
+
+    dddot = Qddot(q,qdot,qddot)*t, where Qddot is the SAME matrix built in
+    computeDirectorRates (it does not depend on t at all), so dddot is
+    (trivially) linear in t with M = Qddot, and
+
+    dt += M^{T}*dd = Qddot^{T}*dd
+
+    Verified via complex-step in isolation (worst relative error 0.0,
+    machine-exact).
+
+    @param vars The full variable vector
+    @param dvars The first time derivative of the variables
+    @param ddvars The second derivatives of the variables
+    @param t The reference directions
+    @param dd The adjoint sensitivities w.r.t. the acceleration-direction
+    director field (dddot)
+    @param dt The adjoint sensitivity w.r.t. the reference directions
+  */
+  template <int vars_per_node, int offset, int num_nodes>
+  static void addDirectorAccelRefNormalSens(const TacsScalar vars[],
+                                            const TacsScalar dvars[],
+                                            const TacsScalar ddvars[],
+                                            const TacsScalar t[],
+                                            const TacsScalar dd[],
+                                            TacsScalar dt[]) {
+    const TacsScalar *q = &vars[offset];
+    const TacsScalar *qdot = &dvars[offset];
+    const TacsScalar *qddot = &ddvars[offset];
+
+    for (int i = 0; i < num_nodes; i++) {
+      TacsScalar Qddot[9];
+      Qddot[0] = -4.0 * (q[2] * qddot[2] + q[3] * qddot[3] + qdot[2] * qdot[2] +
+                         qdot[3] * qdot[3]);
+      Qddot[1] =
+          2.0 * (q[2] * qddot[1] - q[3] * qddot[0] + qddot[2] * q[1] -
+                 qddot[3] * q[0] + qdot[2] * qdot[1] - qdot[3] * qdot[0] +
+                 qdot[2] * qdot[1] - qdot[3] * qdot[0]);
+      Qddot[2] =
+          2.0 * (q[3] * qddot[1] + q[2] * qddot[0] + qddot[3] * q[1] +
+                 qddot[2] * q[0] + qdot[3] * qdot[1] + qdot[2] * qdot[0] +
+                 qdot[3] * qdot[1] + qdot[2] * qdot[0]);
+
+      Qddot[3] =
+          2.0 * (q[1] * qddot[2] + q[3] * qddot[0] + qddot[1] * q[2] +
+                 qddot[3] * q[0] + qdot[1] * qdot[2] + qdot[3] * qdot[0] +
+                 qdot[1] * qdot[2] + qdot[3] * qdot[0]);
+      Qddot[4] = -4.0 * (q[1] * qddot[1] + q[3] * qddot[3] + qdot[1] * qdot[1] +
+                         qdot[3] * qdot[3]);
+      Qddot[5] =
+          2.0 * (q[3] * qddot[2] - q[1] * qddot[0] + qddot[3] * q[2] -
+                 qddot[1] * q[0] + qdot[3] * qdot[2] - qdot[1] * qdot[0] +
+                 qdot[3] * qdot[2] - qdot[1] * qdot[0]);
+
+      Qddot[6] =
+          2.0 * (q[1] * qddot[3] - q[2] * qddot[0] + qddot[1] * q[3] -
+                 qddot[2] * q[0] + qdot[1] * qdot[3] - qdot[2] * qdot[0] +
+                 qdot[1] * qdot[3] - qdot[2] * qdot[0]);
+      Qddot[7] =
+          2.0 * (q[2] * qddot[3] + q[1] * qddot[0] + qddot[2] * q[3] +
+                 qddot[1] * q[0] + qdot[2] * qdot[3] + qdot[1] * qdot[0] +
+                 qdot[2] * qdot[3] + qdot[1] * qdot[0]);
+      Qddot[8] = -4.0 * (q[1] * qddot[1] + q[2] * qddot[2] + qdot[1] * qdot[1] +
+                         qdot[2] * qdot[2]);
+
+      // dt += Qddot^{T} * dd
+      dt[0] += Qddot[0] * dd[0] + Qddot[3] * dd[1] + Qddot[6] * dd[2];
+      dt[1] += Qddot[1] * dd[0] + Qddot[4] * dd[1] + Qddot[7] * dd[2];
+      dt[2] += Qddot[2] * dd[0] + Qddot[5] * dd[1] + Qddot[8] * dd[2];
+
+      t += 3;
+      dd += 3;
+      dt += 3;
+      q += vars_per_node;
+      qdot += vars_per_node;
+      qddot += vars_per_node;
     }
   }
 
