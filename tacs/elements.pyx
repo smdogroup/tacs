@@ -51,6 +51,8 @@ TOTAL_STRAIN_ENERGY_DENSITY = TACS_TOTAL_STRAIN_ENERGY_DENSITY
 ELEMENT_DISPLACEMENT = TACS_ELEMENT_DISPLACEMENT
 ELEMENT_STRAIN = TACS_ELEMENT_STRAIN
 ELEMENT_STRESS = TACS_ELEMENT_STRESS
+ELEMENT_DENSITY_MOMENT = TACS_ELEMENT_DENSITY_MOMENT
+ELEMENT_MOMENT_OF_INERTIA = TACS_ELEMENT_MOMENT_OF_INERTIA
 
 # Flags for the thermomechanical model
 STEADY_STATE_MECHANICAL = TACS_STEADY_STATE_MECHANICAL
@@ -187,6 +189,33 @@ def TestAdjResXptProduct(Element element, int elem_index,
     assert len(ddvars) >= num_vars
 
     return TacsTestAdjResXptProduct(element.ptr, elem_index, time,
+                                   <TacsScalar*>xpts.data,
+                                   <TacsScalar*>vars.data,
+                                   <TacsScalar*>dvars.data,
+                                   <TacsScalar*>ddvars.data, dh,
+                                   test_print_level, atol, rtol)
+
+def TestElementQuantityXptSens(Element element, int elem_index,
+                        int quantity_type,
+                        double time,
+                        np.ndarray[TacsScalar, ndim=1, mode='c'] xpts,
+                        np.ndarray[TacsScalar, ndim=1, mode='c'] vars,
+                        np.ndarray[TacsScalar, ndim=1, mode='c'] dvars,
+                        np.ndarray[TacsScalar, ndim=1, mode='c'] ddvars,
+                        double dh=1e-6,
+                        int test_print_level=2,
+                        double atol=1e-5, double rtol=1e-5):
+    num_nodes = element.getNumNodes()
+    num_vars = element.getNumVariables()
+
+    # Make sure input arrays are large enough for element to avoid segfault
+    assert len(xpts) >= 3 * num_nodes
+    assert len(vars) >= num_vars
+    assert len(dvars) >= num_vars
+    assert len(ddvars) >= num_vars
+
+    return TacsTestElementQuantityXptSens(element.ptr, elem_index,
+                                   quantity_type, time,
                                    <TacsScalar*>xpts.data,
                                    <TacsScalar*>vars.data,
                                    <TacsScalar*>dvars.data,

@@ -163,6 +163,19 @@ class ADVec3ADVecScalarAxpy {
     y.xd[1] += v.xd[1];
     y.xd[2] += v.xd[2];
   }
+  void hforward() {
+    v.xp[0] = scale * (alpha.value * x.xp[0]) + y.xp[0];
+    v.xp[1] = scale * (alpha.value * x.xp[1]) + y.xp[1];
+    v.xp[2] = scale * (alpha.value * x.xp[2]) + y.xp[2];
+  }
+  void hreverse() {
+    x.xh[0] += scale * alpha.value * v.xh[0];
+    x.xh[1] += scale * alpha.value * v.xh[1];
+    x.xh[2] += scale * alpha.value * v.xh[2];
+    y.xh[0] += v.xh[0];
+    y.xh[1] += v.xh[1];
+    y.xh[2] += v.xh[2];
+  }
 
   const TacsScalar scale;
   const Scalar &alpha;
@@ -195,6 +208,21 @@ class ADVec3Axpy {
     y.xd[0] += v.xd[0];
     y.xd[1] += v.xd[1];
     y.xd[2] += v.xd[2];
+  }
+  void hforward() {
+    v.xp[0] = scale * (alpha.valuep * x.x[0] + alpha.value * x.xp[0]) + y.xp[0];
+    v.xp[1] = scale * (alpha.valuep * x.x[1] + alpha.value * x.xp[1]) + y.xp[1];
+    v.xp[2] = scale * (alpha.valuep * x.x[2] + alpha.value * x.xp[2]) + y.xp[2];
+  }
+  void hreverse() {
+    alpha.valueh += scale * Vec3DotCore(x.x, v.xh);
+    alpha.valueh += scale * Vec3DotCore(x.xp, v.xd);
+    x.xh[0] += scale * (alpha.value * v.xh[0] + alpha.valuep * v.xd[0]);
+    x.xh[1] += scale * (alpha.value * v.xh[1] + alpha.valuep * v.xd[1]);
+    x.xh[2] += scale * (alpha.value * v.xh[2] + alpha.valuep * v.xd[2]);
+    y.xh[0] += v.xh[0];
+    y.xh[1] += v.xh[1];
+    y.xh[2] += v.xh[2];
   }
 
   const TacsScalar scale;
@@ -264,6 +292,20 @@ class ADVec3Dot {
     y.xd[0] += s * x.x[0];
     y.xd[1] += s * x.x[1];
     y.xd[2] += s * x.x[2];
+  }
+  void hforward() {
+    alpha.valuep = scale * (Vec3DotCore(x.x, y.xp) + Vec3DotCore(x.xp, y.x));
+  }
+  void hreverse() {
+    TacsScalar sh = scale * alpha.valueh;
+    TacsScalar sd = scale * alpha.valued;
+    x.xh[0] += sh * y.x[0] + sd * y.xp[0];
+    x.xh[1] += sh * y.x[1] + sd * y.xp[1];
+    x.xh[2] += sh * y.x[2] + sd * y.xp[2];
+
+    y.xh[0] += sh * x.x[0] + sd * x.xp[0];
+    y.xh[1] += sh * x.x[1] + sd * x.xp[1];
+    y.xh[2] += sh * x.x[2] + sd * x.xp[2];
   }
 
   const TacsScalar scale;
@@ -695,6 +737,10 @@ class MatTrans3x3ADVecMultScale {
     MatTrans3x3VecMultAddScaleCore(scale.value, A.A, x.xd, y.xd);
   }
   void reverse() { Mat3x3VecMultAddScaleCore(scale.value, A.A, y.xd, x.xd); }
+  void hforward() {
+    MatTrans3x3VecMultAddScaleCore(scale.value, A.A, x.xp, y.xp);
+  }
+  void hreverse() { Mat3x3VecMultAddScaleCore(scale.value, A.A, y.xh, x.xh); }
 
   const Scalar &scale;
   const Mat3x3 &A;
@@ -800,6 +846,33 @@ class ADMatTrans3x3ADVecMultADScale {
     Mat3x3VecMultAddScaleCore(scale.value, A.A, y.xd, x.xd);
     Vec3OuterProductAddScaleCore(scale.value, x.x, y.xd, A.Ad);
     scale.valued += Mat3x3InnerProductCore(A.A, x.x, y.xd);
+  }
+  void hforward() {
+    MatTrans3x3VecMultScaleCore(scale.value, A.Ap, x.x, y.xp);
+    MatTrans3x3VecMultAddScaleCore(scale.value, A.A, x.xp, y.xp);
+    MatTrans3x3VecMultAddScaleCore(scale.valuep, A.A, x.x, y.xp);
+  }
+  void hreverse() {
+    // reverse()-shape term: propagate y.xh through the ordinary Jacobian
+    // (all three factors held at their primal values).
+    Mat3x3VecMultAddScaleCore(scale.value, A.A, y.xh, x.xh);
+    Vec3OuterProductAddScaleCore(scale.value, x.x, y.xh, A.Ah);
+    scale.valueh += Mat3x3InnerProductCore(A.A, x.x, y.xh);
+    // Cross-pairing (scale, x): scale's p-seed contributes to x.xh (A held
+    // at primal); x's p-seed contributes to scale.valueh (A held at
+    // primal); both weighted by the ordinary downstream adjoint y.xd.
+    Mat3x3VecMultAddScaleCore(scale.valuep, A.A, y.xd, x.xh);
+    scale.valueh += Mat3x3InnerProductCore(A.A, x.xp, y.xd);
+    // Cross-pairing (scale, A): scale's p-seed contributes to A.Ah (x held
+    // at primal); A's p-seed contributes to scale.valueh (x held at
+    // primal); both weighted by y.xd.
+    Vec3OuterProductAddScaleCore(scale.valuep, x.x, y.xd, A.Ah);
+    scale.valueh += Mat3x3InnerProductCore(A.Ap, x.x, y.xd);
+    // Cross-pairing (A, x): A's p-seed contributes to x.xh (scale held at
+    // primal); x's p-seed contributes to A.Ah (scale held at primal); both
+    // weighted by y.xd.
+    Mat3x3VecMultAddScaleCore(scale.value, A.Ap, y.xd, x.xh);
+    Vec3OuterProductAddScaleCore(scale.value, x.xp, y.xd, A.Ah);
   }
 
   ADScalar &scale;

@@ -607,6 +607,44 @@ class TACSLinearizedRotation {
     memset(d2Ct, 0, 81 * sizeof(TacsScalar));
     memset(d2Ctu0x, 0, 81 * sizeof(TacsScalar));
   }
+
+  /**
+    No-op hook provided for template uniformity across the three director
+    classes. C(q) = I - q^x is exactly linear in q, so d^2C/dq^2 = 0 and this
+    second-order hook has nothing to contribute; mat[] is left untouched
+    (callers initialize their own accumulators, matching the "+=" contract of
+    the other classes' implementations).
+
+    @param t The reference directions
+    @param dd The adjoint sensitivities w.r.t. the director
+    @param qa The first direction vector in the bilinear map qa^T*H*qb
+    @param qb The second direction vector in the bilinear map qa^T*H*qb
+    @param mat The scalar accumulator for the qa^T*H*qb contribution
+  */
+  template <int vars_per_node, int offset, int num_nodes>
+  static void addDirectorHessianProduct(const TacsScalar t[],
+                                        const TacsScalar dd[],
+                                        const TacsScalar qa[],
+                                        const TacsScalar qb[],
+                                        TacsScalar mat[]) {}
+
+  /**
+    No-op reference-normal (Xpts) adjoint hook, provided for template
+    uniformity. Since C(q) is linear in q (d^2C/dq^2 = 0) there is no
+    contribution and dt[] is left untouched.
+
+    @param t The reference directions
+    @param dd The adjoint sensitivities w.r.t. the director
+    @param qa The first direction vector in the bilinear map qa^T*H*qb
+    @param qb The second direction vector in the bilinear map qa^T*H*qb
+    @param dt The adjoint sensitivity w.r.t. the reference directions
+  */
+  template <int vars_per_node, int offset, int num_nodes>
+  static void addDirectorHessianRefNormalSens(const TacsScalar t[],
+                                              const TacsScalar dd[],
+                                              const TacsScalar qa[],
+                                              const TacsScalar qb[],
+                                              TacsScalar dt[]) {}
 };
 
 /*
@@ -827,6 +865,104 @@ class TACSQuadraticRotation {
       m += vars_per_node * size;
       q += vars_per_node;
       dC += 9;
+    }
+  }
+
+  /**
+    Bilinear map qa^T*H*qb of two arbitrary caller-supplied directions,
+    extracted from addRotationMatJacobian's i==j diagonal-block algebra.
+
+    C(q) = I - q^x + 0.5*(qq^T - q^Tq*I) is exactly quadratic in q, so
+    d^2C/dq^2 is a constant (q-independent) 4th-order tensor. Contracted
+    with dU/dC = outer(dd, t) (since d = C(q)*t gives dU/dC_ij = dd_i*t_j),
+    it reduces to the closed-form symmetric 3x3 matrix
+    H = -(dd.t)*I + 0.5*(dd (x) t + t (x) dd), identical to the i==j block.
+
+    mat[] is a single scalar accumulator that the caller points at the
+    output location (e.g. &dfdu[k]) this node's qa^T*H*qb contribution
+    should land in. qa[]/qb[] use the same offset/vars_per_node-strided
+    indexing as vars[] (full vars-shaped arrays, not pre-sliced 3-vectors);
+    t[]/dd[] use plain 3*i per-node indexing. Verified in
+    src/elements/shell/tests/test_director_hessian_second_order.cpp. The
+    formula is a closed-form polynomial with no branches, so it is
+    holomorphic and complex-step-safe.
+
+    @param t The reference directions
+    @param dd The adjoint sensitivities w.r.t. the director
+    @param qa The first direction vector in the bilinear map qa^T*H*qb
+    @param qb The second direction vector in the bilinear map qa^T*H*qb
+    @param mat The scalar accumulator for the qa^T*H*qb contribution
+  */
+  template <int vars_per_node, int offset, int num_nodes>
+  static void addDirectorHessianProduct(const TacsScalar t[],
+                                        const TacsScalar dd[],
+                                        const TacsScalar qa[],
+                                        const TacsScalar qb[],
+                                        TacsScalar mat[]) {
+    for (int i = 0; i < num_nodes; i++) {
+      const TacsScalar *qai = &qa[offset + i * vars_per_node];
+      const TacsScalar *qbi = &qb[offset + i * vars_per_node];
+
+      TacsScalar ddt = dd[0] * t[0] + dd[1] * t[1] + dd[2] * t[2];
+      TacsScalar H[9];
+      H[0] = -ddt + dd[0] * t[0];
+      H[4] = -ddt + dd[1] * t[1];
+      H[8] = -ddt + dd[2] * t[2];
+      H[1] = H[3] = 0.5 * (dd[0] * t[1] + dd[1] * t[0]);
+      H[2] = H[6] = 0.5 * (dd[0] * t[2] + dd[2] * t[0]);
+      H[5] = H[7] = 0.5 * (dd[1] * t[2] + dd[2] * t[1]);
+
+      TacsScalar Hqb0 = H[0] * qbi[0] + H[1] * qbi[1] + H[2] * qbi[2];
+      TacsScalar Hqb1 = H[3] * qbi[0] + H[4] * qbi[1] + H[5] * qbi[2];
+      TacsScalar Hqb2 = H[6] * qbi[0] + H[7] * qbi[1] + H[8] * qbi[2];
+
+      mat[0] += qai[0] * Hqb0 + qai[1] * Hqb1 + qai[2] * Hqb2;
+
+      t += 3;
+      dd += 3;
+    }
+  }
+
+  /**
+    Reference-normal (Xpts) adjoint of addDirectorHessianProduct above.
+    Since H(t,dd) is linear in t for fixed dd, val = qa^T*H*qb is linear in
+    t and its gradient w.r.t. t is a closed-form, t-independent 3-vector
+    (from qa^T*H*qb = -(dd.t)*(qa.qb) + 0.5*(qa.dd)*(t.qb) +
+    0.5*(qa.t)*(dd.qb)):
+
+      d(val)/dt = -(qa.qb)*dd + 0.5*(qa.dd)*qb + 0.5*(dd.qb)*qa
+
+    Accumulated into dt[]. t[] is accepted for signature symmetry with
+    addDirectorHessianProduct but is not referenced (the gradient does not
+    depend on t). Closed-form, holomorphic, complex-step-safe.
+
+    @param t The reference directions (unreferenced; the gradient is
+    t-independent)
+    @param dd The adjoint sensitivities w.r.t. the director
+    @param qa The first direction vector in the bilinear map qa^T*H*qb
+    @param qb The second direction vector in the bilinear map qa^T*H*qb
+    @param dt The adjoint sensitivity w.r.t. the reference directions
+  */
+  template <int vars_per_node, int offset, int num_nodes>
+  static void addDirectorHessianRefNormalSens(const TacsScalar t[],
+                                              const TacsScalar dd[],
+                                              const TacsScalar qa[],
+                                              const TacsScalar qb[],
+                                              TacsScalar dt[]) {
+    for (int i = 0; i < num_nodes; i++) {
+      const TacsScalar *qai = &qa[offset + i * vars_per_node];
+      const TacsScalar *qbi = &qb[offset + i * vars_per_node];
+
+      TacsScalar qadd = qai[0] * dd[0] + qai[1] * dd[1] + qai[2] * dd[2];
+      TacsScalar qbdd = qbi[0] * dd[0] + qbi[1] * dd[1] + qbi[2] * dd[2];
+      TacsScalar qaqb = qai[0] * qbi[0] + qai[1] * qbi[1] + qai[2] * qbi[2];
+
+      dt[0] += -qaqb * dd[0] + 0.5 * qadd * qbi[0] + 0.5 * qbdd * qai[0];
+      dt[1] += -qaqb * dd[1] + 0.5 * qadd * qbi[1] + 0.5 * qbdd * qai[1];
+      dt[2] += -qaqb * dd[2] + 0.5 * qadd * qbi[2] + 0.5 * qbdd * qai[2];
+
+      dd += 3;
+      dt += 3;
     }
   }
 
@@ -1709,6 +1845,137 @@ class TACSQuaternionRotation {
       m += vars_per_node * size;
       q += vars_per_node;
       dC += 9;
+    }
+  }
+
+  /**
+    Bilinear map qa^T*H*qb, extracted from addRotationMatJacobian's i==j
+    diagonal-block algebra -- same contract as
+    TACSQuadraticRotation::addDirectorHessianProduct above, but for the
+    quaternion's 4x4 (not 3x3) constant Hessian block, since C(q) here is a
+    homogeneous quadratic in the 4-vector q = (q0, q1, q2, q3).
+
+    Splitting qa = (qa0, qa_vec[3]) and qb = (qb0, qb_vec[3]) into scalar
+    and vector parts (matching q[0] vs q[1..3]):
+
+      val = qa^T*H*qb
+          = 2*qa0*((dd x t).qb_vec) + 2*qb0*((dd x t).qa_vec)
+          + 4*[-(dd.t)*(qa_vec.qb_vec) + 0.5*(qa_vec.dd)*(t.qb_vec)
+               + 0.5*(qa_vec.t)*(dd.qb_vec)]
+
+    (H[0][0] = 0 contributes nothing; the 3x3 vec-vec sub-block is exactly
+    4x TACSQuadraticRotation's own H.)
+
+    mat[]/qa[]/qb[]/t[]/dd[] conventions are identical to
+    TACSQuadraticRotation::addDirectorHessianProduct above (mat[] a single
+    scalar accumulator; qa[]/qb[] full vars-shaped, offset/vars_per_node-
+    strided; t[]/dd[] plain 3*i-strided per-node 3-vectors). Closed-form,
+    holomorphic, complex-step-safe.
+
+    @param t The reference directions
+    @param dd The adjoint sensitivities w.r.t. the director
+    @param qa The first direction vector in the bilinear map qa^T*H*qb
+    @param qb The second direction vector in the bilinear map qa^T*H*qb
+    @param mat The scalar accumulator for the qa^T*H*qb contribution
+  */
+  template <int vars_per_node, int offset, int num_nodes>
+  static void addDirectorHessianProduct(const TacsScalar t[],
+                                        const TacsScalar dd[],
+                                        const TacsScalar qa[],
+                                        const TacsScalar qb[],
+                                        TacsScalar mat[]) {
+    for (int i = 0; i < num_nodes; i++) {
+      const TacsScalar *qai = &qa[offset + i * vars_per_node];
+      const TacsScalar *qbi = &qb[offset + i * vars_per_node];
+      const TacsScalar *qa_vec = &qai[1];
+      const TacsScalar *qb_vec = &qbi[1];
+
+      TacsScalar ddxt[3];
+      ddxt[0] = dd[1] * t[2] - dd[2] * t[1];
+      ddxt[1] = dd[2] * t[0] - dd[0] * t[2];
+      ddxt[2] = dd[0] * t[1] - dd[1] * t[0];
+
+      TacsScalar ddt = dd[0] * t[0] + dd[1] * t[1] + dd[2] * t[2];
+      TacsScalar qa_dd =
+          qa_vec[0] * dd[0] + qa_vec[1] * dd[1] + qa_vec[2] * dd[2];
+      TacsScalar qb_dd =
+          qb_vec[0] * dd[0] + qb_vec[1] * dd[1] + qb_vec[2] * dd[2];
+      TacsScalar t_qb = t[0] * qb_vec[0] + t[1] * qb_vec[1] + t[2] * qb_vec[2];
+      TacsScalar t_qa = t[0] * qa_vec[0] + t[1] * qa_vec[1] + t[2] * qa_vec[2];
+      TacsScalar qaqb_vec =
+          qa_vec[0] * qb_vec[0] + qa_vec[1] * qb_vec[1] + qa_vec[2] * qb_vec[2];
+      TacsScalar ddxt_qb =
+          ddxt[0] * qb_vec[0] + ddxt[1] * qb_vec[1] + ddxt[2] * qb_vec[2];
+      TacsScalar ddxt_qa =
+          ddxt[0] * qa_vec[0] + ddxt[1] * qa_vec[1] + ddxt[2] * qa_vec[2];
+
+      mat[0] +=
+          2.0 * qai[0] * ddxt_qb + 2.0 * qbi[0] * ddxt_qa +
+          4.0 * (-ddt * qaqb_vec + 0.5 * qa_dd * t_qb + 0.5 * t_qa * qb_dd);
+
+      t += 3;
+      dd += 3;
+    }
+  }
+
+  /**
+    Reference-normal (Xpts) adjoint of addDirectorHessianProduct above.
+    val = qa^T*H*qb is linear in t (H is linear in t); its gradient w.r.t.
+    t follows from the val formula above via the scalar-triple-product
+    identity (dd x t).qb_vec = t.(qb_vec x dd):
+
+      d(val)/dt = 2*qa0*(qb_vec x dd) + 2*qb0*(qa_vec x dd)
+                + 4*[-(qa_vec.qb_vec)*dd + 0.5*(qa_vec.dd)*qb_vec
+                     + 0.5*(dd.qb_vec)*qa_vec]
+
+    Accumulated into dt[]. t[] is accepted for signature symmetry but not
+    referenced (the gradient is t-independent). Closed-form, holomorphic,
+    complex-step-safe.
+
+    @param t The reference directions (unreferenced; the gradient is
+    t-independent)
+    @param dd The adjoint sensitivities w.r.t. the director
+    @param qa The first direction vector in the bilinear map qa^T*H*qb
+    @param qb The second direction vector in the bilinear map qa^T*H*qb
+    @param dt The adjoint sensitivity w.r.t. the reference directions
+  */
+  template <int vars_per_node, int offset, int num_nodes>
+  static void addDirectorHessianRefNormalSens(const TacsScalar t[],
+                                              const TacsScalar dd[],
+                                              const TacsScalar qa[],
+                                              const TacsScalar qb[],
+                                              TacsScalar dt[]) {
+    for (int i = 0; i < num_nodes; i++) {
+      const TacsScalar *qai = &qa[offset + i * vars_per_node];
+      const TacsScalar *qbi = &qb[offset + i * vars_per_node];
+      const TacsScalar *qa_vec = &qai[1];
+      const TacsScalar *qb_vec = &qbi[1];
+
+      TacsScalar qbxdd[3];
+      qbxdd[0] = qb_vec[1] * dd[2] - qb_vec[2] * dd[1];
+      qbxdd[1] = qb_vec[2] * dd[0] - qb_vec[0] * dd[2];
+      qbxdd[2] = qb_vec[0] * dd[1] - qb_vec[1] * dd[0];
+
+      TacsScalar qaxdd[3];
+      qaxdd[0] = qa_vec[1] * dd[2] - qa_vec[2] * dd[1];
+      qaxdd[1] = qa_vec[2] * dd[0] - qa_vec[0] * dd[2];
+      qaxdd[2] = qa_vec[0] * dd[1] - qa_vec[1] * dd[0];
+
+      TacsScalar qa_dd =
+          qa_vec[0] * dd[0] + qa_vec[1] * dd[1] + qa_vec[2] * dd[2];
+      TacsScalar qb_dd =
+          qb_vec[0] * dd[0] + qb_vec[1] * dd[1] + qb_vec[2] * dd[2];
+      TacsScalar qaqb_vec =
+          qa_vec[0] * qb_vec[0] + qa_vec[1] * qb_vec[1] + qa_vec[2] * qb_vec[2];
+
+      for (int k = 0; k < 3; k++) {
+        dt[k] += 2.0 * qai[0] * qbxdd[k] + 2.0 * qbi[0] * qaxdd[k] +
+                 4.0 * (-qaqb_vec * dd[k] + 0.5 * qa_dd * qb_vec[k] +
+                        0.5 * qb_dd * qa_vec[k]);
+      }
+
+      dd += 3;
+      dt += 3;
     }
   }
 

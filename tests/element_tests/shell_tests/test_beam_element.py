@@ -176,7 +176,33 @@ class ElementTest(unittest.TestCase):
                         )
                         self.assertFalse(fail)
 
-    @unittest.SkipTest
+    def test_quantity_xpt_sens(self):
+        # Loop through every combination of transform type and beam element
+        # class and test the point-quantity Xpts-sensitivity.
+        # TACS_ELEMENT_MOMENT_OF_INERTIA is the only quantity type covered
+        # here; the others (TACS_ELEMENT_DENSITY_MOMENT, TACS_FAILURE_INDEX,
+        # TACS_STRAIN_ENERGY_DENSITY) are already analytic and not re-tested.
+        for transform in self.transforms:
+            with self.subTest(transform=transform):
+                for element_handle in self.elements:
+                    with self.subTest(element=element_handle):
+                        element = element_handle(transform, self.con)
+                        fail = elements.TestElementQuantityXptSens(
+                            element,
+                            self.elem_index,
+                            elements.ELEMENT_MOMENT_OF_INERTIA,
+                            self.time,
+                            self.xpts,
+                            self.vars,
+                            self.dvars,
+                            self.ddvars,
+                            self.dh,
+                            self.print_level,
+                            self.atol,
+                            self.rtol,
+                        )
+                        self.assertFalse(fail)
+
     def test_element_mat_dv_sens(self):
         # Loop through every combination of transform type and beam element class and element matrix inner product sens
         for transform in self.transforms:
@@ -202,7 +228,6 @@ class ElementTest(unittest.TestCase):
                                 )
                                 self.assertFalse(fail)
 
-    @unittest.SkipTest
     def test_element_mat_xpt_sens(self):
         # Loop through every combination of transform type and shell element class and element matrix inner product sens
         for transform in self.transforms:
@@ -226,7 +251,44 @@ class ElementTest(unittest.TestCase):
                                 )
                                 self.assertFalse(fail)
 
-    @unittest.SkipTest
+    def test_element_mat_sv_sens_nonlinear_director(self):
+        # Matrix-sensitivity coverage for the nonlinear-director beam typedef
+        # (ModRot, i.e. TACSQuadraticRotation). Uses a separate, narrow
+        # element list rather than self.elements because the other tests in
+        # this file are not yet analytic for this director class, so adding
+        # ModRot to the shared list would break them. TACSQuaternionRotation
+        # is not covered here (no TACSBeam*Quaternion typedef exists); its
+        # addDirectorHessian* hooks are covered at the director-hook level in
+        # src/elements/shell/tests/test_director_hessian_second_order.cpp.
+        #
+        # For TACS_STIFFNESS_MATRIX/TACS_MASS_MATRIX this currently exercises
+        # the base FD/CS fallback for this director class (analytic
+        # matrix-sens for ModRot is not yet implemented). For
+        # GEOMETRIC_STIFFNESS_MATRIX the sensitivity is analytic
+        # (TACSLinearizedRotation-only, unaffected by ModRot). Serves as a
+        # regression net either way.
+        modrot_elements = [elements.Beam2ModRot, elements.Beam3ModRot]
+        for transform in self.transforms:
+            with self.subTest(transform=transform):
+                for element_handle in modrot_elements:
+                    with self.subTest(element=element_handle):
+                        element = element_handle(transform, self.con)
+                        for matrix_type in self.matrix_types:
+                            with self.subTest(matrix_type=matrix_type):
+                                fail = elements.TestElementMatSVSens(
+                                    element,
+                                    matrix_type,
+                                    self.elem_index,
+                                    self.time,
+                                    self.xpts,
+                                    self.vars,
+                                    self.dh,
+                                    self.print_level,
+                                    self.atol,
+                                    self.rtol,
+                                )
+                                self.assertFalse(fail)
+
     def test_element_mat_sv_sens(self):
         # Loop through every combination of model and basis class and test element matrix inner product sens
         for transform in self.transforms:

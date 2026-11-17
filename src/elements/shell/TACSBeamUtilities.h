@@ -1,6 +1,8 @@
 #ifndef TACS_BEAM_UTILITIES_H
 #define TACS_BEAM_UTILITIES_H
 
+#include <cstring>
+
 #include "TACSElementAlgebra.h"
 #include "a2d.h"
 
@@ -105,381 +107,207 @@ void TacsBeamAddNodeNormalsSens(const TacsScalar Xpts[], const A2D::Vec3 &axis,
   }
 }
 
-// /**
-//   Compute the displacement gradient of the constant and through-thickness
-//   rate of change of the displacements.
+/*
+  Add the cross-Hessian contribution between the two director fields (d1, d2)
+  to the element Jacobian. Shell elements have a single director, so there is
+  no precedent: director::addDirectorJacobian handles each director's own
+  self-Hessian and its coupling to the translational DOFs, but has no slot for
+  a cross term between the two directors.
 
-//   @param pt The parametric point
-//   @param Xpts The node locations for the element
-//   @param vars The element variables
-//   @param fn The frame normal directions at each node
-//   @param d The director field at each node
-//   @param Xxi The in-plane coordinate derivatives
-//   @param n0 The interpolated frame normal direction
-//   @param T The transformation to local coordinates
-//   @param XdinvT Product of inverse of the Jacobian trans. and T
-//   @param XdinvzT Product of z-derivative of Jac. trans. inv. and T
-//   @param u0x Derivative of the displacement in the local x coordinates
-//   @param u1x Derivative of the through-thickness disp. in local x coordinates
-// */
-// template <int vars_per_node, class basis>
-// TacsScalar TacsBeamComputeDispGrad( const double pt[],
-//                                     const TacsScalar Xpts[],
-//                                     const TacsScalar vars[],
-//                                     const TacsScalar fn1[],
-//                                     const TacsScalar fn2[],
-//                                     const TacsScalar d1[],
-//                                     const TacsScalar d2[],
-//                                     const TacsScalar Xxi[],
-//                                     const TacsScalar n1[],
-//                                     const TacsScalar n2[],
-//                                     const TacsScalar T[],
-//                                     TacsScalar XdinvT[],
-//                                     TacsScalar Xdinvz1T[],
-//                                     TacsScalar Xdinvz2T[],
-//                                     TacsScalar u0x[],
-//                                     TacsScalar d1x[],
-//                                     TacsScalar d2x[] ){
-//   // Assemble the reference frame
-//   TacsScalar Xd[9];
-//   TacsShellAssembleFrame(Xxi, n1, n2, Xd);
+  Beam's two directors share the same per-node rotation vector q but use
+  different reference normals fn1/fn2. For TACSLinearizedRotation the director
+  map is d = crossProduct(q, t) = -skew(t)*q, so d(d_node)/d(q_node) =
+  -skew(t_node), a fixed per-node congruence factor. Propagating the
+  director-space cross-Hessian d2d1d2 through this congruence on both sides
+  gives, per node pair (i, j):
 
-//   // Compute the inverse of the 3x3 Jacobian transformation
-//   TacsScalar Xdinv[9];
-//   TacsScalar detXd = inv3x3(Xd, Xdinv);
+    mat_block(q_i, q_j) -= skew(fn1_i) * d2d1d2[i,j] * skew(fn2_j)
 
-//   // Assemble the derivative of the reference frame
-//   TacsScalar Ud[9];
-//   TacsShellAssembleFrame(u0xi, d1, d2, Ud);
+  computed via mat3x3SkewMatSkewTransform (TACSElementAlgebra.h). Both
+  directors share q, so this accumulates additively into the same
+  (rotational, rotational) sub-block that the two director::addDirectorJacobian
+  calls also write into.
 
-//   // Compute n,xi = [dn/dxi1; dn/dxi2]
-//   TacsScalar n1xi[3], n2xi[3];
-//   basis::template interpFieldsGrad<3, 3>(pt, fn1, n1xi);
-//   basis::template interpFieldsGrad<3, 3>(pt, fn2, n2xi);
+  Exact only for TACSLinearizedRotation, where the director-to-rotation map is
+  a fixed linear congruence. TACSQuadraticRotation/TACSQuaternionRotation make
+  this map state-dependent and would need an additional cross-director
+  curvature correction.
 
-//   // Assemble the terms Xd = [Xxi; n1; n2] and Xdz
-//   TacsScalar Xdz1[9], Xdz2[9];
-//   TacsShellAssembleFrame(n1xi, Xdz1);
-//   TacsShellAssembleFrame(n2xi, Xdz2);
+  @param vars The full variable vector (unused for TACSLinearizedRotation's
+  fixed congruence factor; retained for a possible nonlinear-director extension)
+  @param fn1 The first reference normal direction at each node
+  @param fn2 The second reference normal direction at each node
+  @param d2d1d2 The (d1-index, d2-index) cross-Hessian, dsize x dsize
+  row-major, already alpha/gamma-scaled by the caller
+  @param mat The element Jacobian matrix
+*/
+template <int vars_per_node, int offset, int num_nodes>
+void TacsBeamAddCrossDirectorJacobian(const TacsScalar vars[],
+                                      const TacsScalar fn1[],
+                                      const TacsScalar fn2[],
+                                      const TacsScalar d2d1d2[],
+                                      TacsScalar mat[]) {
+  const int dsize = 3 * num_nodes;
+  const int nvars = vars_per_node * num_nodes;
 
-//   // Compute negXdinvXdz = -Xdinv*Xdz
-//   TacsScalar negXdinvXdz1[9], negXdinvXdz2[9];
-//   mat3x3MatMult(Xdinv, Xdz1, negXdinvXdz1);
-//   for ( int i = 0; i < 9; i++ ){
-//     negXdinvXdz1[i] *= -1.0;
-//   }
-//   mat3x3MatMult(Xdinv, Xdz2, negXdinvXdz2);
-//   for ( int i = 0; i < 9; i++ ){
-//     negXdinvXdz2[i] *= -1.0;
-//   }
+  for (int i = 0; i < num_nodes; i++) {
+    for (int j = 0; j < num_nodes; j++) {
+      TacsScalar block[9];
+      for (int p = 0; p < 3; p++) {
+        for (int q = 0; q < 3; q++) {
+          block[3 * p + q] = d2d1d2[dsize * (3 * i + p) + (3 * j + q)];
+        }
+      }
 
-//   // Compute XdinvT = Xdinv*T
-//   mat3x3MatMult(Xdinv, T, XdinvT);
+      TacsScalar D[9];
+      mat3x3SkewMatSkewTransform(&fn1[3 * i], block, &fn2[3 * j], D);
 
-//   // Compute Xdinvz = -Xdinv*Xdz*Xdinv*T
-//   mat3x3MatMult(negXdinvXdz1, XdinvT, Xdinvz1T);
-//   mat3x3MatMult(negXdinvXdz2, XdinvT, Xdinvz2T);
+      for (int p = 0; p < 3; p++) {
+        for (int q = 0; q < 3; q++) {
+          int row = offset + vars_per_node * i + p;
+          int col = offset + vars_per_node * j + q;
+          mat[row * nvars + col] -= D[3 * p + q];
 
-//   // Compute the director field and the gradient of the director
-//   // field at the specified point
-//   TacsScalar d01[3], d02[3], d1xi[3], d2xi[3];
-//   basis::template interpFields<3, 3>(pt, d1, d01);
-//   basis::template interpFields<3, 3>(pt, d2, d02);
-//   basis::template interpFieldsGrad<3, 3>(pt, d1, d1xi);
-//   basis::template interpFieldsGrad<3, 3>(pt, d2, d2xi);
-
-//   // d1x = T^{T}*(d1xi*e1^{T} + Ur*z1Xdinv)*T*e1
-//   TacsScalar scale = Xdinv[0]*T[0] + Xdinv[1]*T[3] + Xdinv[2]*T[6];
-//   tmp[0] = T[0];
-//   tmp[1] = T[3];
-//   tmp[2] = T[6];
-//   mat3x3Mult(z1Xdinv, tmp, d1x); // tmp = z1Xdinv*T*e1
-//   mat3x3Mult(u0xi, d1x, tmp); // tmp = Ur*z1Xdinv*T*e1
-//   vec3Axpy(scale, d1a, tmp);
-//   mat3x3MultTrans(T, tmp, Td1a);
-
-//   // Td2a = T^{T}*d2a*e1^{T}*Xdinv*T*e1
-//   TacsScalar Td2a[3], z2Te1[3];
-//   tmp[0] = T[0];
-//   tmp[1] = T[3];
-//   tmp[2] = T[6];
-//   mat3x3Mult(z2Xdinv, tmp, z2Te1); // tmp = z1Xdinv*T*e1
-//   mat3x3Mult(Ur, z2Te1, tmp); // tmp = Ur*z1Xdinv*T*e1
-//   vec3Axpy(S[0], d2a, tmp);
-//   mat3x3MultTrans(T, tmp, Td2a);
-
-//   // Compute the gradient of the displacement solution at the quadrature
-//   points TacsScalar u0[3], u0xi[3]; basis::template
-//   interpFields<vars_per_node, 3>(pt, vars, u0); basis::template
-//   interpFieldsGrad<vars_per_node, 3>(pt, vars, u0xi);
-
-//   // Compute the derivative u0,x
-//   TacsShellAssembleFrame(u0xi, d01, d01, u0x); // Use u0x to store [u0,xi;
-//   d1, d2]
-
-//   // d1x = T^{T}*d1*XdinvT + T^{T}*u0*XdinvzT
-//   // TacsScalar tmp[9];
-//   // TacsShellAssembleFrame(d0xi, u1x); // Use u1x to store [d0,xi; 0]
-//   // mat3x3MatMult(u1x, XdinvT, tmp);
-//   // mat3x3MatMultAdd(u0x, XdinvzT, tmp);
-//   // mat3x3TransMatMult(T, tmp, u1x);
-
-//   // // Compute the transformation u0x = T^{T}*ueta*Xdinv*T
-//   // // u0x = T^{T}*u0d*Xdinv*T
-//   // mat3x3MatMult(u0x, XdinvT, tmp);
-//   // mat3x3TransMatMult(T, tmp, u0x);
-
-//   return detXd;
-// }
+          // Reusing the SAME D[3*p+q] value (rather than a separately
+          // computed transpose) for the (j,i) slot is valid only because
+          // this model's d2d1d2 3x3 node-pair blocks are always symmetric
+          // (block[p,q] == block[q,p]): the static contribution is a
+          // rank-1 t1 (tangent) outer product with itself, and the
+          // dynamics contribution is rho[5]*I3 -- both symmetric 3x3
+          // blocks. A kinematics change that made d2d1d2's node-pair blocks
+          // non-symmetric would need a separate transposed computation
+          // here, not this shortcut.
+          int rowT = offset + vars_per_node * j + q;
+          int colT = offset + vars_per_node * i + p;
+          mat[rowT * nvars + colT] -= D[3 * p + q];
+        }
+      }
+    }
+  }
+}
 
 /*
-  Test the implementation of the shell terms for a given basis
+  Zero the second-order (.xp/.xh, .Ap/.Ah) fields on every second-order A2D
+  node before a per-DOF hforward/hreverse sweep iteration. These fields are
+  "+=" accumulators that are not auto-reset, and most are not overwritten by
+  each iteration's own seed step (e.g. the translational sweep seeds only
+  u0xi.xp), so stale values from a previous iteration must be cleared here.
+
+  @param u0xi The beam-axis displacement gradient (du0/dxi) node
+  @param d01 The first director node
+  @param d02 The second director node
+  @param d01xi The parametric gradient of the first director node
+  @param d02xi The parametric gradient of the second director node
+  @param u0d The displacement gradient matrix node
+  @param u0dXdinvT The displacement gradient matrix times XdinvT node
+  @param u0x The displacement gradient in the local frame node
+  @param d1t The first director rate before the frame transform node
+  @param d1x The first director gradient in the local frame node
+  @param d2t The second director rate before the frame transform node
+  @param d2x The second director gradient in the local frame node
 */
-template <int vars_per_node, class basis>
-int TacsTestBeamUtilities(double dh = 1e-7, int test_print_level = 2,
-                          double test_fail_atol = 1e-5,
-                          double test_fail_rtol = 1e-5) {
-  int fail = 0;
-  /*
-  const int size = vars_per_node*basis::NUM_NODES;
-  const int usize = 3*basis::NUM_NODES;
-  const int dsize = 3*basis::NUM_NODES;
-  const int xsize = 3*basis::NUM_NODES;
+static inline void TacsBeamZeroSecondOrderNodes(
+    A2D::ADVec3 &u0xi, A2D::ADVec3 &d01, A2D::ADVec3 &d02, A2D::ADVec3 &d01xi,
+    A2D::ADVec3 &d02xi, A2D::ADMat3x3 &u0d, A2D::ADMat3x3 &u0dXdinvT,
+    A2D::ADMat3x3 &u0x, A2D::ADVec3 &d1t, A2D::ADVec3 &d1x, A2D::ADVec3 &d2t,
+    A2D::ADVec3 &d2x) {
+  memset(u0xi.xp, 0, 3 * sizeof(TacsScalar));
+  memset(u0xi.xh, 0, 3 * sizeof(TacsScalar));
+  memset(d01.xp, 0, 3 * sizeof(TacsScalar));
+  memset(d01.xh, 0, 3 * sizeof(TacsScalar));
+  memset(d02.xp, 0, 3 * sizeof(TacsScalar));
+  memset(d02.xh, 0, 3 * sizeof(TacsScalar));
+  memset(d01xi.xp, 0, 3 * sizeof(TacsScalar));
+  memset(d01xi.xh, 0, 3 * sizeof(TacsScalar));
+  memset(d02xi.xp, 0, 3 * sizeof(TacsScalar));
+  memset(d02xi.xh, 0, 3 * sizeof(TacsScalar));
+  memset(u0d.Ap, 0, 9 * sizeof(TacsScalar));
+  memset(u0d.Ah, 0, 9 * sizeof(TacsScalar));
+  memset(u0dXdinvT.Ap, 0, 9 * sizeof(TacsScalar));
+  memset(u0dXdinvT.Ah, 0, 9 * sizeof(TacsScalar));
+  memset(u0x.Ap, 0, 9 * sizeof(TacsScalar));
+  memset(u0x.Ah, 0, 9 * sizeof(TacsScalar));
+  memset(d1t.xp, 0, 3 * sizeof(TacsScalar));
+  memset(d1t.xh, 0, 3 * sizeof(TacsScalar));
+  memset(d1x.xp, 0, 3 * sizeof(TacsScalar));
+  memset(d1x.xh, 0, 3 * sizeof(TacsScalar));
+  memset(d2t.xp, 0, 3 * sizeof(TacsScalar));
+  memset(d2t.xh, 0, 3 * sizeof(TacsScalar));
+  memset(d2x.xp, 0, 3 * sizeof(TacsScalar));
+  memset(d2x.xh, 0, 3 * sizeof(TacsScalar));
+}
 
-  double pt[2];
-  TacsGenerateRandomArray(pt, 2);
+/*
+  Contract the fixed, per-quadrature-point material Hessian blocks
+  against the forward-propagated seed direction (u0xp/d1xp/d2xp)
+  to produce the Hessian-vector product at the u0x/d1x/d2x
+  nodes (u0xh/d1xh/d2xh), which the following hreverse() sweep propagates back
+  to the vars-space DOFs. This is the "H*p" step of the per-DOF sweep: a pure
+  linear-algebra contraction, not a differentiation. All array shapes and
+  indices are row-major and match model::evalStrainHessian's layout, e.g.
+  d2u0xd1x[3*i+j] = d^2/d(u0x_i)d(d1x_j).
 
-  TacsScalar T[9];
-  TacsGenerateRandomArray(T, 9);
-
-  TacsScalar Xpts[xsize], fn[xsize];
-  TacsGenerateRandomArray(Xpts, xsize);
-  TacsGenerateRandomArray(fn, xsize);
-
-  TacsScalar n0[3], Xxi[6];
-  basis::template interpFields<3, 3>(pt, fn, n0);
-  basis::template interpFieldsGrad<3, 3>(pt, Xpts, Xxi);
-
-  TacsScalar vars[size], d[dsize];
-  TacsGenerateRandomArray(vars, size);
-  TacsGenerateRandomArray(d, dsize);
-
-  // Generate random perturbations for the linear terms
-  TacsScalar du0x[9], du1x[9];
-  TacsGenerateRandomArray(du0x, 9);
-  TacsGenerateRandomArray(du1x, 9);
-
-  // Generate the derivative terms
-  TacsScalar d2u0x[81], d2u1x[81], d2u0xu1x[81];
-  TacsGenerateRandomArray(d2u0x, 81);
-  TacsGenerateRandomArray(d2u1x, 81);
-  TacsGenerateRandomArray(d2u0xu1x, 81);
-
-  // Symmetrize the random matrices
-  for ( int i = 0; i < 9; i++ ){
-    for ( int j = i+1; j < 9; j++ ){
-      d2u0x[9*i + j] = d2u0x[9*j + i];
-      d2u1x[9*i + j] = d2u1x[9*j + i];
+  @param d2u0x The u0x self-Hessian block (9x9, row-major)
+  @param d2d1x The d1x self-Hessian block (3x3, row-major)
+  @param d2d2x The d2x self-Hessian block (3x3, row-major)
+  @param d2u0xd1x The mixed u0x-d1x Hessian block (9x3, row-major)
+  @param d2u0xd2x The mixed u0x-d2x Hessian block (9x3, row-major)
+  @param d2d1xd2x The mixed d1x-d2x Hessian block (3x3, row-major)
+  @param u0xp The forward-propagated u0x seed direction (input)
+  @param d1xp The forward-propagated d1x seed direction (input)
+  @param d2xp The forward-propagated d2x seed direction (input)
+  @param u0xh The u0x Hessian-vector product, accumulated (output)
+  @param d1xh The d1x Hessian-vector product, accumulated (output)
+  @param d2xh The d2x Hessian-vector product, accumulated (output)
+*/
+static inline void TacsBeamContractStrainHessian(
+    const TacsScalar d2u0x[81], const TacsScalar d2d1x[9],
+    const TacsScalar d2d2x[9], const TacsScalar d2u0xd1x[27],
+    const TacsScalar d2u0xd2x[27], const TacsScalar d2d1xd2x[9],
+    const TacsScalar u0xp[9], const TacsScalar d1xp[3],
+    const TacsScalar d2xp[3], TacsScalar u0xh[9], TacsScalar d1xh[3],
+    TacsScalar d2xh[3]) {
+  for (int i = 0; i < 9; i++) {
+    TacsScalar val = 0.0;
+    for (int j = 0; j < 9; j++) {
+      val += d2u0x[9 * i + j] * u0xp[j];
     }
-  }
-
-  TacsScalar res[size], mat[size*size];
-  memset(res, 0, size*sizeof(TacsScalar));
-  memset(mat, 0, size*size*sizeof(TacsScalar));
-
-  TacsScalar dd[dsize], d2d[dsize*dsize], d2du[usize*dsize];
-  memset(dd, 0, dsize*sizeof(TacsScalar));
-  memset(d2d, 0, dsize*dsize*sizeof(TacsScalar));
-  memset(d2du, 0, usize*dsize*sizeof(TacsScalar));
-
-  TacsScalar XdinvT[9], XdinvzT[9];
-  TacsScalar u0x[9], u1x[9];
-  TacsShellComputeDispGrad<vars_per_node, basis>(pt, Xpts, vars, fn, d, Xxi, n0,
-T, XdinvT, XdinvzT, u0x, u1x);
-
-  TacsShellAddDispGradSens<vars_per_node, basis>(pt, T, XdinvT, XdinvzT,
-                                                 du0x, du1x, res, dd);
-  TacsShellAddDispGradHessian<vars_per_node, basis>(pt, T, XdinvT, XdinvzT,
-                                                    d2u0x, d2u1x, d2u0xu1x,
-                                                    mat, d2d, d2du);
-
-  // Now, check the result
-  TacsScalar fdmat[size*size], fddu[dsize*usize];
-  for ( int k = 0; k < size; k++ ){
-    TacsScalar varst[size];
-    memcpy(varst, vars, size*sizeof(TacsScalar));
-
-#ifdef TACS_USE_COMPLEX
-    varst[k] = vars[k] + TacsScalar(0.0, dh);
-#else
-    varst[k] = vars[k] + dh;
-#endif // TACS_USE_COMPLEX
-
-    // Compute the pertubation
-    TacsScalar u0xt[9], u1xt[9];
-    TacsShellComputeDispGrad<vars_per_node, basis>(pt, Xpts, varst, fn, d, Xxi,
-n0, T, XdinvT, XdinvzT, u0xt, u1xt);
-
-    // d2u0xu1x[9*i + j] = p2f/(p(u0x[i]) p(u1x[j]))
-    // d2Ctu0x[9*i + j] = p2f/(p(Ct[i]) p(u0x[j]))
-
-    // Compute the perturbed values based on the outputs
-    TacsScalar du0xt[9], du1xt[9];
-    for ( int i = 0; i < 9; i++ ){
-      du0xt[i] = du0x[i];
-      du1xt[i] = du1x[i];
-      for ( int j = 0; j < 9; j++ ){
-        du0xt[i] += d2u0x[9*i + j]*(u0xt[j] - u0x[j]) +
-                    d2u0xu1x[9*i + j]*(u1xt[j] - u1x[j]);
-
-        du1xt[i] += d2u1x[9*i + j]*(u1xt[j] - u1x[j]) +
-                    d2u0xu1x[9*j + i]*(u0xt[j] - u0x[j]);
-      }
+    for (int j = 0; j < 3; j++) {
+      val += d2u0xd1x[3 * i + j] * d1xp[j];
     }
-
-    TacsScalar rest[size], ddt[dsize];
-    memset(rest, 0, size*sizeof(TacsScalar));
-    memset(ddt, 0, dsize*sizeof(TacsScalar));
-    TacsShellAddDispGradSens<vars_per_node, basis>(pt, T, XdinvT, XdinvzT,
-                                                   du0xt, du1xt, rest, ddt);
-
-    // Place the result in the arrays...
-    for ( int j = 0; j < size; j++ ){
-#ifdef TACS_USE_COMPLEX
-      fdmat[k + size*j] = TacsImagPart(rest[j])/dh;
-#else
-      fdmat[k + size*j] = (rest[j] - res[j])/dh;
-#endif // TACS_USE_COMPLEX
+    for (int j = 0; j < 3; j++) {
+      val += d2u0xd2x[3 * i + j] * d2xp[j];
     }
+    u0xh[i] += val;
+  }
 
-    if (k % vars_per_node < 3){
-      // Compute the u-index
-      int index = 3*(k / vars_per_node) + k % vars_per_node;
-
-      for ( int j = 0; j < dsize; j++ ){
-#ifdef TACS_USE_COMPLEX
-        fddu[index + usize*j] = TacsImagPart(ddt[j])/dh;
-#else
-        fddu[index + usize*j] = (ddt[j] - dd[j])/dh;
-#endif // TACS_USE_COMPLEX
-      }
+  for (int i = 0; i < 3; i++) {
+    TacsScalar val = 0.0;
+    for (int j = 0; j < 3; j++) {
+      val += d2d1x[3 * i + j] * d1xp[j];
     }
-  }
-
-  // Variables to store the max error and indices
-  int max_err_index, max_rel_index;
-  double max_err, max_rel;
-
-  // Keep track of the failure flag
-  int fail = 0;
-
-  // Compute the error
-  max_err = TacsGetMaxError(mat, fdmat, size*size, &max_err_index);
-  max_rel = TacsGetMaxRelError(mat, fdmat, size*size, &max_rel_index);
-
-  if (test_print_level > 0){
-    fprintf(stderr, "Testing the derivative w.r.t. vars\n");
-    fprintf(stderr, "Max Err: %10.4e in component %d.\n",
-            max_err, max_err_index);
-    fprintf(stderr, "Max REr: %10.4e in component %d.\n",
-            max_rel, max_rel_index);
-  }
-  // Print the error if required
-  if (test_print_level > 1){
-    TacsPrintErrorComponents(stderr, "mat", mat, fdmat, size*size);
-  }
-  if (test_print_level){ fprintf(stderr, "\n"); }
-
-  fail = (max_err > test_fail_atol || max_rel > test_fail_rtol);
-
-  // Compute the error
-  max_err = TacsGetMaxError(d2du, fddu, usize*dsize, &max_err_index);
-  max_rel = TacsGetMaxRelError(d2du, fddu, usize*dsize, &max_rel_index);
-
-  if (test_print_level > 0){
-    fprintf(stderr, "Testing the derivative w.r.t. d and vars\n");
-    fprintf(stderr, "Max Err: %10.4e in component %d.\n",
-            max_err, max_err_index);
-    fprintf(stderr, "Max REr: %10.4e in component %d.\n",
-            max_rel, max_rel_index);
-  }
-  // Print the error if required
-  if (test_print_level > 1){
-    TacsPrintErrorComponents(stderr, "d2du", d2du, fddu, usize*dsize);
-  }
-  if (test_print_level){ fprintf(stderr, "\n"); }
-
-  fail = (max_err > test_fail_atol || max_rel > test_fail_rtol);
-
-  TacsScalar fddd[dsize*dsize];
-  for ( int k = 0; k < dsize; k++ ){
-    TacsScalar dt[dsize];
-    memcpy(dt, d, dsize*sizeof(TacsScalar));
-
-#ifdef TACS_USE_COMPLEX
-    dt[k] = d[k] + TacsScalar(0.0, dh);
-#else
-    dt[k] = d[k] + dh;
-#endif // TACS_USE_COMPLEX
-
-    // Compute the pertubation
-    TacsScalar u0xt[9], u1xt[9];
-    TacsShellComputeDispGrad<vars_per_node, basis>(pt, Xpts, vars, fn, dt, Xxi,
-n0, T, XdinvT, XdinvzT, u0xt, u1xt);
-
-    // d2u0xu1x[9*i + j] = p2f/(p(u0x[i]) p(u1x[j]))
-    // d2Ctu0x[9*i + j] = p2f/(p(Ct[i]) p(u0x[j]))
-
-    // Compute the perturbed values based on the outputs
-    TacsScalar du0xt[9], du1xt[9];
-    for ( int i = 0; i < 9; i++ ){
-      du0xt[i] = du0x[i];
-      du1xt[i] = du1x[i];
-      for ( int j = 0; j < 9; j++ ){
-        du0xt[i] += d2u0x[9*i + j]*(u0xt[j] - u0x[j]) +
-                    d2u0xu1x[9*i + j]*(u1xt[j] - u1x[j]);
-
-        du1xt[i] += d2u1x[9*i + j]*(u1xt[j] - u1x[j]) +
-                    d2u0xu1x[9*j + i]*(u0xt[j] - u0x[j]);
-      }
+    for (int j = 0; j < 9; j++) {
+      val += d2u0xd1x[3 * j + i] * u0xp[j];
     }
-
-    TacsScalar rest[size], ddt[dsize];
-    memset(rest, 0, size*sizeof(TacsScalar));
-    memset(ddt, 0, dsize*sizeof(TacsScalar));
-    TacsShellAddDispGradSens<vars_per_node, basis>(pt, T, XdinvT, XdinvzT,
-                                                   du0xt, du1xt, rest, ddt);
-
-    for ( int j = 0; j < dsize; j++ ){
-#ifdef TACS_USE_COMPLEX
-      fddd[k + dsize*j] = TacsImagPart(ddt[j])/dh;
-#else
-      fddd[k + dsize*j] = (ddt[j] - dd[j])/dh;
-#endif // TACS_USE_COMPLEX
+    for (int j = 0; j < 3; j++) {
+      val += d2d1xd2x[3 * i + j] * d2xp[j];
     }
+    d1xh[i] += val;
   }
 
-  // Compute the error
-  max_err = TacsGetMaxError(d2d, fddd, dsize*dsize, &max_err_index);
-  max_rel = TacsGetMaxRelError(d2d, fddd, dsize*dsize, &max_rel_index);
-
-  if (test_print_level > 0){
-    fprintf(stderr, "Testing the derivative w.r.t. d\n");
-    fprintf(stderr, "Max Err: %10.4e in component %d.\n",
-            max_err, max_err_index);
-    fprintf(stderr, "Max REr: %10.4e in component %d.\n",
-            max_rel, max_rel_index);
+  for (int i = 0; i < 3; i++) {
+    TacsScalar val = 0.0;
+    for (int j = 0; j < 3; j++) {
+      val += d2d2x[3 * i + j] * d2xp[j];
+    }
+    for (int j = 0; j < 9; j++) {
+      val += d2u0xd2x[3 * j + i] * u0xp[j];
+    }
+    for (int j = 0; j < 3; j++) {
+      val += d2d1xd2x[3 * j + i] * d1xp[j];
+    }
+    d2xh[i] += val;
   }
-  // Print the error if required
-  if (test_print_level > 1){
-    TacsPrintErrorComponents(stderr, "d2d", d2d, fddd, dsize*dsize);
-  }
-  if (test_print_level){ fprintf(stderr, "\n"); }
-
-  fail = (max_err > test_fail_atol || max_rel > test_fail_rtol);
-  */
-
-  return fail;
 }
 
 #endif  // TACS_BEAM_UTILITIES_H
