@@ -1361,7 +1361,7 @@ void BCSCMat::addMatBlockValues(int num_rows, const int brows[], int num_cols,
   Y:           the dense output data of size (nrows, bsize)
 */
 void BCSCMat::mult(TacsScalar *X, TacsScalar *Y, int vec_bsize) {
-  memset(Y, 0, nrows * vec_bsize * sizeof(TacsScalar));
+  memset(Y, 0, sizeof(TacsScalar) * nrows * vec_bsize);
   multAdd(X, Y, Y, vec_bsize);
 }
 
@@ -1386,7 +1386,7 @@ void BCSCMat::mult(TacsScalar *X, TacsScalar *Y, int vec_bsize) {
 void BCSCMat::multAdd(TacsScalar *X, TacsScalar *Z, TacsScalar *Y,
                       int vec_bsize) {
   if (Y != Z) {
-    memcpy(Y, Z, nrows * vec_bsize * sizeof(TacsScalar));
+    memcpy(Y, Z, sizeof(TacsScalar) * nrows * vec_bsize);
   }
 
   // Allocate temporary storage for the matrix-matrix products if it
@@ -2193,7 +2193,7 @@ double BCSCMatPivot::factor(double _fill) {
 
   // Initialize the sparse accumulator object
   TacsScalar *column = temp_column;
-  memset(column, 0, nrows * max_block_size * sizeof(TacsScalar));
+  memset(column, 0, sizeof(TacsScalar) * nrows * max_block_size);
 
   // Allocate temporary arrays for data used during the factorization
   int *node_stack = &temp_iarray[0];

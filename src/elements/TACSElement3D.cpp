@@ -318,7 +318,7 @@ void TACSElement3D::getMatType(ElementMatrixType matType, int elemIndex,
                                const TacsScalar vars[], TacsScalar mat[]) {
   // Zero the element matrix
   const int nvars = getNumVariables();
-  memset(mat, 0, nvars * nvars * sizeof(TacsScalar));
+  memset(mat, 0, sizeof(TacsScalar) * nvars * nvars);
 
   // Compute the number of quadrature points
   const int nquad = basis->getNumQuadraturePoints();

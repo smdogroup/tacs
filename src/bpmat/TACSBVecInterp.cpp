@@ -1046,7 +1046,7 @@ void TACSBVecInterp::initialize() {
   }
 
   // Zero the external vector
-  memset(x_ext, 0, bsize * num_ext_vars * sizeof(TacsScalar));
+  memset(x_ext, 0, sizeof(TacsScalar) * bsize * num_ext_vars);
 }
 
 /*
@@ -1161,7 +1161,7 @@ void TACSBVecInterp::multTranspose(TACSBVec *inVec, TACSBVec *outVec) {
   outVec->getArray(&out);
 
   // Zero the off-processor contribution
-  memset(x_ext, 0, bsize * num_ext_vars * sizeof(TacsScalar));
+  memset(x_ext, 0, sizeof(TacsScalar) * bsize * num_ext_vars);
 
   // Multiply the off-processor part first
   multtransadd(bsize, N, ext_rowp, ext_cols, ext_weights, in, x_ext);
@@ -1208,7 +1208,7 @@ void TACSBVecInterp::multTransposeAdd(TACSBVec *inVec, TACSBVec *addVec,
   outVec->getArray(&out);
 
   // Zero the off-processor contribution
-  memset(x_ext, 0, bsize * num_ext_vars * sizeof(TacsScalar));
+  memset(x_ext, 0, sizeof(TacsScalar) * bsize * num_ext_vars);
 
   // Multiply the off-processor part first
   multtransadd(bsize, N, ext_rowp, ext_cols, ext_weights, in, x_ext);

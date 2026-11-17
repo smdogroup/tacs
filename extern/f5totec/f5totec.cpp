@@ -236,7 +236,7 @@ int main(int argc, char *argv[]) {
     // For each element, average the values at the nodes to get a single element
     // value
     float *avg_edata = new float[num_elements * num_evariables];
-    memset(avg_edata, 0, num_elements * num_evariables * sizeof(float));
+    memset(avg_edata, 0, sizeof(float) * num_elements * num_evariables);
     for (int i = 0; i < num_elements; i++) {
       int nnodes = ptr[i + 1] - ptr[i];
       for (int j = 0; j < num_evariables; j++) {

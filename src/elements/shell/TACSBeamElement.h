@@ -680,8 +680,8 @@ void TACSBeamElement<quadrature, basis, director, model>::getMatType(
     ElementMatrixType matType, int elemIndex, double time,
     const TacsScalar Xpts[], const TacsScalar vars[], TacsScalar mat[]) {
   memset(mat, 0,
-         vars_per_node * num_nodes * vars_per_node * num_nodes *
-             sizeof(TacsScalar));
+         sizeof(TacsScalar) * vars_per_node * num_nodes * vars_per_node *
+             num_nodes);
   TacsScalar alpha, beta, gamma;
   alpha = beta = gamma = 0.0;
   // Set alpha or gamma based on if this is a stiffness or mass matrix
@@ -695,7 +695,7 @@ void TACSBeamElement<quadrature, basis, director, model>::getMatType(
   }
   // Create dummy residual vector
   TacsScalar res[vars_per_node * num_nodes];
-  memset(res, 0, vars_per_node * num_nodes * sizeof(TacsScalar));
+  memset(res, 0, sizeof(TacsScalar) * vars_per_node * num_nodes);
   // Add appropriate Jacobian to matrix
   addJacobian(elemIndex, time, alpha, beta, gamma, Xpts, vars, vars, vars, res,
               mat);

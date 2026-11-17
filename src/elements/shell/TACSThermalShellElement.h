@@ -460,10 +460,10 @@ void TACSThermalShellElement<quadrature, basis, director, model>::addJacobian(
   // Second derivatives required for the director
   TacsScalar d2d[dsize * dsize], d2du[usize * dsize];
   TacsScalar d2Tdotd[dsize * dsize], d2Tdotu[usize * dsize];
-  memset(d2d, 0, dsize * dsize * sizeof(TacsScalar));
-  memset(d2du, 0, usize * dsize * sizeof(TacsScalar));
-  memset(d2Tdotd, 0, dsize * dsize * sizeof(TacsScalar));
-  memset(d2Tdotu, 0, usize * dsize * sizeof(TacsScalar));
+  memset(d2d, 0, sizeof(TacsScalar) * dsize * dsize);
+  memset(d2du, 0, sizeof(TacsScalar) * usize * dsize);
+  memset(d2Tdotd, 0, sizeof(TacsScalar) * dsize * dsize);
+  memset(d2Tdotu, 0, sizeof(TacsScalar) * usize * dsize);
 
   // Zero the contributions to the tying strain derivatives
   TacsScalar dety[basis::NUM_TYING_POINTS];
@@ -485,7 +485,7 @@ void TACSThermalShellElement<quadrature, basis, director, model>::addJacobian(
   TacsScalar etn[num_nodes], detn[num_nodes];
   TacsScalar d2etn[num_nodes * num_nodes];
   memset(detn, 0, num_nodes * sizeof(TacsScalar));
-  memset(d2etn, 0, num_nodes * num_nodes * sizeof(TacsScalar));
+  memset(d2etn, 0, sizeof(TacsScalar) * num_nodes * num_nodes);
 
   // Store information about the transformation and derivatives at each node for
   // the drilling degrees of freedom
@@ -758,8 +758,8 @@ void TACSThermalShellElement<quadrature, basis, director, model>::getMatType(
     ElementMatrixType matType, int elemIndex, double time,
     const TacsScalar Xpts[], const TacsScalar vars[], TacsScalar mat[]) {
   memset(mat, 0,
-         vars_per_node * num_nodes * vars_per_node * num_nodes *
-             sizeof(TacsScalar));
+         sizeof(TacsScalar) * vars_per_node * num_nodes * vars_per_node *
+             num_nodes);
   TacsScalar alpha, beta, gamma;
   alpha = beta = gamma = 0.0;
   // Set alpha or gamma based on if this is a stiffness or mass matrix
@@ -773,7 +773,7 @@ void TACSThermalShellElement<quadrature, basis, director, model>::getMatType(
   }
   // Create dummy residual vector
   TacsScalar res[vars_per_node * num_nodes];
-  memset(res, 0, vars_per_node * num_nodes * sizeof(TacsScalar));
+  memset(res, 0, sizeof(TacsScalar) * vars_per_node * num_nodes);
   // Add appropriate Jacobian to matrix
   addJacobian(elemIndex, time, alpha, beta, gamma, Xpts, vars, vars, vars, res,
               mat);

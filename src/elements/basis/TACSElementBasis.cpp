@@ -992,7 +992,7 @@ void TACSElementBasis::addMatVecProduct(const int vars_per_node,
         &temp[(n + 1) * vars_per_node * (1 + num_params) + vars_per_node];
 
     memset(DU, 0, vars_per_node * sizeof(TacsScalar));
-    memset(DUx, 0, num_params * vars_per_node * sizeof(TacsScalar));
+    memset(DUx, 0, sizeof(TacsScalar) * num_params * vars_per_node);
 
     // Compute the output based on the Jacobian input
     for (int ii = 0; ii < Jac_nnz; ii++) {

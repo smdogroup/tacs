@@ -868,8 +868,8 @@ int TACSIntegrator::lapackNaturalFrequencies(int use_gyroscopic, TACSBVec *q,
     int n = 2 * num_state_vars;
     double *A = new double[n * n];
     double *B = new double[n * n];
-    memset(A, 0, n * n * sizeof(double));
-    memset(B, 0, n * n * sizeof(double));
+    memset(A, 0, sizeof(double) * n * n);
+    memset(B, 0, sizeof(double) * n * n);
 
     // Call LAPACK
     double *alphar = new double[n];
@@ -946,8 +946,8 @@ int TACSIntegrator::lapackNaturalFrequencies(int use_gyroscopic, TACSBVec *q,
     int n = num_state_vars;
     double *A = new double[n * n];
     double *B = new double[n * n];
-    memset(A, 0, n * n * sizeof(double));
-    memset(B, 0, n * n * sizeof(double));
+    memset(A, 0, sizeof(double) * n * n);
+    memset(B, 0, sizeof(double) * n * n);
 
     // Call LAPACK
     double *alphar = new double[n];

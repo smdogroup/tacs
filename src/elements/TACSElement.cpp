@@ -335,7 +335,7 @@ void TACSElement::getMatType(ElementMatrixType matType, int elemIndex,
                              double time, const TacsScalar Xpts[],
                              const TacsScalar vars[], TacsScalar mat[]) {
   int size = getNumNodes() * getVarsPerNode();
-  memset(mat, 0, size * size * sizeof(TacsScalar));
+  memset(mat, 0, sizeof(TacsScalar) * size * size);
   TacsScalar alpha, beta, gamma;
   alpha = beta = gamma = 0.0;
   // Set alpha or gamma based on if this is a stiffness or mass matrix
@@ -369,7 +369,7 @@ void TACSElement::addMatDVSensInnerProduct(
   int nvars = getNumVariables();
   TacsScalar *mat = new TacsScalar[nvars * nvars];
 
-  memset(mat, 0, nvars * nvars * sizeof(TacsScalar));
+  memset(mat, 0, sizeof(TacsScalar) * nvars * nvars);
   TacsScalar p1 = 0.0;
   getMatType(matType, elemIndex, time, Xpts, vars, mat);
   for (int i = 0; i < nvars; i++) {
@@ -388,7 +388,7 @@ void TACSElement::addMatDVSensInnerProduct(
 #endif  // TACS_USE_COMPLEX
     setDesignVars(elemIndex, dvLen, x);
 
-    memset(mat, 0, nvars * nvars * sizeof(TacsScalar));
+    memset(mat, 0, sizeof(TacsScalar) * nvars * nvars);
     TacsScalar p2 = 0.0;
     getMatType(matType, elemIndex, time, Xpts, vars, mat);
     for (int i = 0; i < nvars; i++) {
@@ -449,7 +449,7 @@ void TACSElement::addMatXptSensInnerProduct(
   int nvars = getNumVariables();
   TacsScalar *mat = new TacsScalar[nvars * nvars];
 
-  memset(mat, 0, nvars * nvars * sizeof(TacsScalar));
+  memset(mat, 0, sizeof(TacsScalar) * nvars * nvars);
   TacsScalar p1 = 0.0;
   getMatType(matType, elemIndex, time, Xpts, vars, mat);
   for (int i = 0; i < nvars; i++) {
@@ -467,7 +467,7 @@ void TACSElement::addMatXptSensInnerProduct(
     X[k] = xt + dh;
 #endif  // TACS_USE_COMPLEX
 
-    memset(mat, 0, nvars * nvars * sizeof(TacsScalar));
+    memset(mat, 0, sizeof(TacsScalar) * nvars * nvars);
     TacsScalar p2 = 0.0;
     getMatType(matType, elemIndex, time, X, vars, mat);
     for (int i = 0; i < nvars; i++) {
@@ -523,7 +523,7 @@ void TACSElement::getMatSVSensInnerProduct(
   TacsScalar *vars1 = new TacsScalar[nvars];
 
   memcpy(vars1, vars, nvars * sizeof(TacsScalar));
-  memset(mat, 0, nvars * nvars * sizeof(TacsScalar));
+  memset(mat, 0, sizeof(TacsScalar) * nvars * nvars);
   TacsScalar p1 = 0.0;
   getMatType(matType, elemIndex, time, Xpts, vars, mat);
   for (int i = 0; i < nvars; i++) {
@@ -541,7 +541,7 @@ void TACSElement::getMatSVSensInnerProduct(
     vars1[k] = vt + dh;
 #endif  // TACS_USE_COMPLEX
 
-    memset(mat, 0, nvars * nvars * sizeof(TacsScalar));
+    memset(mat, 0, sizeof(TacsScalar) * nvars * nvars);
     TacsScalar p2 = 0.0;
     getMatType(matType, elemIndex, time, Xpts, vars1, mat);
     for (int i = 0; i < nvars; i++) {

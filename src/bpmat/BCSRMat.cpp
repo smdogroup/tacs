@@ -1234,7 +1234,7 @@ void BCSRMat::mult(TacsScalar *xvec, TacsScalar *yvec) {
     tdata->init_mat_mult_sched();
     tdata->input = xvec;
     tdata->output = yvec;
-    memset(yvec, 0, data->bsize * data->nrows * sizeof(TacsScalar));
+    memset(yvec, 0, sizeof(TacsScalar) * data->bsize * data->nrows);
 
     // Create the joinable attribute
     pthread_attr_t attr;
@@ -1275,7 +1275,7 @@ void BCSRMat::multAdd(TacsScalar *xvec, TacsScalar *zvec, TacsScalar *yvec) {
     tdata->output = yvec;
 
     if (zvec != yvec) {
-      memcpy(yvec, zvec, data->bsize * data->nrows * sizeof(TacsScalar));
+      memcpy(yvec, zvec, sizeof(TacsScalar) * data->bsize * data->nrows);
     }
 
     // Create the joinable attribute
@@ -1304,7 +1304,7 @@ void BCSRMat::multAdd(TacsScalar *xvec, TacsScalar *zvec, TacsScalar *yvec) {
   Compute y = A^{T}*x
 */
 void BCSRMat::multTranspose(TacsScalar *xvec, TacsScalar *yvec) {
-  memset(yvec, 0, data->bsize * data->ncols * sizeof(TacsScalar));
+  memset(yvec, 0, sizeof(TacsScalar) * data->bsize * data->ncols);
   bmulttrans(data, xvec, yvec);
 }
 
@@ -1336,7 +1336,7 @@ void BCSRMat::applyFactor(TacsScalar *xvec, TacsScalar *yvec) {
       }
 
       if (yvec != xvec) {
-        memcpy(yvec, xvec, data->bsize * data->nrows * sizeof(TacsScalar));
+        memcpy(yvec, xvec, sizeof(TacsScalar) * data->bsize * data->nrows);
       }
       tdata->output = yvec;
 
@@ -2365,7 +2365,7 @@ void BCSRMat::getDenseColumnMajor(TacsScalar *D) {
   const TacsScalar *A = data->A;
 
   // Zero the array first and fill the non-zeros alone
-  memset(D, 0, bsize * bsize * nrows * nrows * sizeof(TacsScalar));
+  memset(D, 0, sizeof(TacsScalar) * bsize * bsize * nrows * nrows);
 
   // The leading dimension of the dense column matrix
   const int ldd = bsize * nrows;

@@ -547,7 +547,7 @@ int TACSFH5File::getZoneData(const char **zone_name, const char **var_names,
     *dim2 = current->dim2;
   }
 
-  size_t len = current->dim1 * current->dim2;
+  size_t len = (size_t)current->dim1 * current->dim2;
   if (dtype == FH5_INT) {
     if (_dtype) {
       *_dtype = FH5_INT;

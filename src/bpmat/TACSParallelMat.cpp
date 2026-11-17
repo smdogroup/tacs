@@ -663,7 +663,7 @@ void TACSGaussSeidel::factor() {
 
     // Allocate space for the diagonal entries
     diag = new TacsScalar[bsize * N];
-    memset(diag, 0, bsize * N * sizeof(TacsScalar));
+    memset(diag, 0, sizeof(TacsScalar) * bsize * N);
 
     // Sum up the entries in the off diagonal part of the matrix
     BCSRMatData *Bdata = B->getMatData();
@@ -1117,7 +1117,7 @@ double TACSChebyshevSmoother::gershgorin(TACSParallelMat *pmat) {
 */
 double TACSChebyshevSmoother::arnoldi(int size, TACSMat *pmat) {
   double *H = new double[size * (size + 1)];
-  memset(H, 0, size * (size + 1) * sizeof(double));
+  memset(H, 0, sizeof(double) * size * (size + 1));
 
   // Allocate space for the vectors
   TACSVec **W = new TACSVec *[size + 1];
