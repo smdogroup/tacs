@@ -123,8 +123,8 @@ void TACSMassCentrifugalForce::addAdjResProduct(
 
   // res[i] += f[i] where f = M * ac, so the adjoint product for a dv x is
   // scale * psi^T * M * d(ac)/dx = scale * (M*psi) . d(ac)/dx by symmetry of M
-  TacsScalar g[NUM_DISPS];
-  con->evalInertia(elemIndex, pt, X, psi, g);
+  TacsScalar Mpsi[NUM_DISPS];
+  con->evalInertia(elemIndex, pt, X, psi, Mpsi);
 
   for (int i = 0; i < 3; i++) {
     if (omegaDVNums[i] >= 0) {
@@ -136,7 +136,8 @@ void TACSMassCentrifugalForce::addAdjResProduct(
         crossProduct(ei, wxr, dac);
         crossProduct(ei, r, eixr);
         crossProductAdd(1.0, omegaVec, eixr, dac);
-        dfdx[index] += scale * (g[0] * dac[0] + g[1] * dac[1] + g[2] * dac[2]);
+        dfdx[index] +=
+            scale * (Mpsi[0] * dac[0] + Mpsi[1] * dac[1] + Mpsi[2] * dac[2]);
       }
       index++;
     }
@@ -150,7 +151,8 @@ void TACSMassCentrifugalForce::addAdjResProduct(
         TacsScalar wxe[3], dac[3];
         crossProduct(omegaVec, ei, wxe);
         crossProduct(omegaVec, wxe, dac);
-        dfdx[index] -= scale * (g[0] * dac[0] + g[1] * dac[1] + g[2] * dac[2]);
+        dfdx[index] -=
+            scale * (Mpsi[0] * dac[0] + Mpsi[1] * dac[1] + Mpsi[2] * dac[2]);
       }
       index++;
     }

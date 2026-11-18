@@ -88,12 +88,12 @@ void TACSMassInertialForce::addAdjResProduct(
   // res[i] -= f[i] where f = M * inertiaVec, so d(res)/d(inertiaVec[j]) =
   // -M[:,j]. The adjoint product is: -scale * psi^T * M[:,j] = -scale * (M *
   // psi)[j], which equals -scale * evalInertia(psi)[j] by symmetry of M.
-  TacsScalar g[NUM_DISPS];
-  con->evalInertia(elemIndex, pt, Xpts, psi, g);
+  TacsScalar Mpsi[NUM_DISPS];
+  con->evalInertia(elemIndex, pt, Xpts, psi, Mpsi);
   for (int i = 0; i < 3; i++) {
     if (inertiaVecDVNums[i] >= 0) {
       if (index < dvLen) {
-        dfdx[index] += -scale * g[i];
+        dfdx[index] += -scale * Mpsi[i];
       }
       index++;
     }
