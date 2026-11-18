@@ -13,6 +13,7 @@ import unittest
 import numpy as np
 
 from tacs import pyTACS, constitutive, elements, functions
+from tacs._testing import fails_at_version
 
 try:
     from tacs.mach import StructProblem
@@ -106,6 +107,7 @@ class StructProblemPyOptTest(unittest.TestCase):
             ["g_load", "pressure_load", "unused_load", "struct"],
         )
 
+    @fails_at_version("3.15")
     def test_get_var_name_is_deprecated(self):
         """Assert that the getVarName alias raises a DeprecationWarning and returns the same name as getStructDVName."""
         with self.assertWarns(DeprecationWarning):

@@ -520,9 +520,9 @@ class StructProblem(BaseStructProblem):
         """
         Get the name of the structural design variable group in pyOpt.
 
-        .. deprecated::
+        .. deprecated:: 3.13
             Use :meth:`getStructDVName` instead. This method will be removed
-            in a future release.
+            in v3.15.
 
         Returns
         -------
@@ -530,7 +530,8 @@ class StructProblem(BaseStructProblem):
             Name of the structural design variable group.
         """
         warnings.warn(
-            "StructProblem.getVarName is deprecated, use getStructDVName instead.",
+            "StructProblem.getVarName is deprecated as of v3.13 and will be removed "
+            "in v3.15. Use getStructDVName instead.",
             DeprecationWarning,
             stacklevel=2,
         )
