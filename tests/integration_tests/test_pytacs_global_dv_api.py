@@ -33,6 +33,7 @@ class GlobalDVAPITest(unittest.TestCase):
         self.fea_assembler = pytacs.pyTACS(bdf_file)
 
     def test_scalar_dv(self):
+        """Assert that addGlobalDV with a scalar value returns the int DV number 0 and registers one global DV with one scale."""
         dvNum = self.fea_assembler.addGlobalDV("alpha", 1.0, lower=0.0, upper=2.0)
         self.assertIsInstance(dvNum, int)
         self.assertEqual(dvNum, 0)
@@ -43,6 +44,7 @@ class GlobalDVAPITest(unittest.TestCase):
         self.assertEqual(len(self.fea_assembler.scaleList), 1)
 
     def test_array_dv(self):
+        """Assert that addGlobalDV with an array value returns an array of consecutive DV numbers, registers one global DV and scale per entry, and numbers the next DV after the array."""
         dvNums = self.fea_assembler.addGlobalDV("g", [0.0, 0.0, -9.81])
         self.assertIsInstance(dvNums, np.ndarray)
         np.testing.assert_array_equal(dvNums, [0, 1, 2])
@@ -54,12 +56,14 @@ class GlobalDVAPITest(unittest.TestCase):
         self.assertEqual(nextNum, 3)
 
     def test_array_dv_returned_nums_are_a_copy(self):
+        """Assert that changing the DV numbers addGlobalDV returns for an array DV does not change the stored DV numbers."""
         dvNums = self.fea_assembler.addGlobalDV("g", [0.0, 0.0, -9.81])
         dvNums[0] = 99
         dv_dict = self.fea_assembler.getGlobalDVs()["g"]
         np.testing.assert_array_equal(dv_dict["num"], [0, 1, 2])
 
     def test_array_dv_scalar_bounds_broadcast(self):
+        """Assert that scalar lower, upper and scale values given for an array DV are broadcast to every entry."""
         self.fea_assembler.addGlobalDV(
             "g", [0.0, 0.0, -9.81], lower=-20.0, upper=20.0, scale=0.1
         )
@@ -69,6 +73,7 @@ class GlobalDVAPITest(unittest.TestCase):
         self.assertEqual(self.fea_assembler.scaleList, [0.1] * 3)
 
     def test_array_dv_array_bounds(self):
+        """Assert that lower, upper and scale arrays given for an array DV are stored entry by entry."""
         self.fea_assembler.addGlobalDV(
             "g",
             [0.0, 0.0, -9.81],
@@ -82,32 +87,43 @@ class GlobalDVAPITest(unittest.TestCase):
         self.assertEqual(self.fea_assembler.scaleList, [1.0, 1.0, 0.1])
 
     def test_array_dv_unbounded(self):
+        """Assert that an array DV added without bounds stores None as its lower and upper bounds."""
         self.fea_assembler.addGlobalDV("g", [0.0, 0.0, -9.81])
         dv_dict = self.fea_assembler.getGlobalDVs()["g"]
         self.assertIsNone(dv_dict["lowerBound"])
         self.assertIsNone(dv_dict["upperBound"])
 
     def test_empty_array_value_raises(self):
+        """Assert that addGlobalDV raises an Error for an empty array value."""
         with self.assertRaises(Error):
             self.fea_assembler.addGlobalDV("g", [])
 
     def test_multidim_array_value_raises(self):
+        """Assert that addGlobalDV raises an Error for a two-dimensional array value."""
         with self.assertRaises(Error):
             self.fea_assembler.addGlobalDV("g", np.zeros((2, 3)))
 
     def test_bound_length_mismatch_raises(self):
+        """Assert that addGlobalDV raises an Error when a bound array has a different length from the array value."""
         with self.assertRaises(Error):
             self.fea_assembler.addGlobalDV("g", [0.0, 0.0, -9.81], lower=[-1.0, -2.0])
 
     def test_scale_length_mismatch_raises(self):
+        """Assert that addGlobalDV raises an Error when the scale array has a different length from the array value."""
         with self.assertRaises(Error):
             self.fea_assembler.addGlobalDV("g", [0.0, 0.0, -9.81], scale=[1.0, 2.0])
 
     def test_array_bound_with_scalar_value_raises(self):
+        """Assert that addGlobalDV raises an Error when an array bound is given for a scalar value."""
         with self.assertRaises(Error):
             self.fea_assembler.addGlobalDV("alpha", 1.0, lower=[0.0])
 
     def test_assign_mass_dv_array_entry(self):
+        """
+        Given an array global DV,
+        when assignMassDV assigns one of its entries to a point mass,
+        then only that entry is flagged as a mass DV and the mass element takes that entry's DV number and value.
+        """
         dvNums = self.fea_assembler.addGlobalDV("point_dvs", [20.0, 30.0])
         self.fea_assembler.assignMassDV("point_dvs", 1, "m", index=1)
         dv_dict = self.fea_assembler.getGlobalDVs()["point_dvs"]
@@ -117,6 +133,7 @@ class GlobalDVAPITest(unittest.TestCase):
         self.assertEqual(self.fea_assembler.massDVs[1]["m"], 30.0)
 
     def test_assign_mass_dv_array_entry_bounds(self):
+        """Assert that a mass DV assigned from an entry of an array DV takes that entry's lower and upper bounds."""
         self.fea_assembler.addGlobalDV(
             "point_dvs", [20.0, 30.0], lower=[1.0, 2.0], upper=[100.0, 200.0]
         )
@@ -125,25 +142,30 @@ class GlobalDVAPITest(unittest.TestCase):
         self.assertEqual(self.fea_assembler.massDVs[1]["mub"], 100.0)
 
     def test_assign_mass_dv_array_requires_index(self):
+        """Assert that assignMassDV raises an Error for an array DV when no index is given."""
         self.fea_assembler.addGlobalDV("point_dvs", [20.0, 30.0])
         with self.assertRaises(Error):
             self.fea_assembler.assignMassDV("point_dvs", 1, "m")
 
     def test_assign_mass_dv_array_index_out_of_range(self):
+        """Assert that assignMassDV raises an Error for an array DV when the index is past its last entry."""
         self.fea_assembler.addGlobalDV("point_dvs", [20.0, 30.0])
         with self.assertRaises(Error):
             self.fea_assembler.assignMassDV("point_dvs", 1, "m", index=2)
 
     def test_assign_mass_dv_scalar_rejects_index(self):
+        """Assert that assignMassDV raises an Error when an index is given for a scalar DV."""
         self.fea_assembler.addGlobalDV("point_mass", 20.0)
         with self.assertRaises(Error):
             self.fea_assembler.assignMassDV("point_mass", 1, "m", index=0)
 
     def test_assign_mass_dv_missing_key_rejects_index(self):
+        """Assert that assignMassDV raises an Error when an index is given for a DV name that was never added with addGlobalDV."""
         with self.assertRaises(Error):
             self.fea_assembler.assignMassDV("point_mass", 1, "m", index=0)
 
     def test_assign_mass_dv_scalar_still_works(self):
+        """Assert that assignMassDV without an index flags a scalar global DV as a mass DV."""
         self.fea_assembler.addGlobalDV("point_mass", 20.0)
         self.fea_assembler.assignMassDV("point_mass", 1, "m")
         dv_dict = self.fea_assembler.getGlobalDVs()["point_mass"]
@@ -162,6 +184,11 @@ class GlobalDVBoundsAfterInitializeTest(unittest.TestCase):
     N_PROCS = 1
 
     def test_scalar_zero_bounds_are_applied(self):
+        """
+        Given a scalar mass DV added with zero lower and upper bounds,
+        when the assembler is initialized,
+        then getDesignVarRange returns the zero bounds instead of the mass element's own bounds.
+        """
         fea_assembler = pytacs.pyTACS(bdf_file)
         # A mass dv gets its bounds from the constitutive object (+/-1e20 by
         # default), so a dropped zero bound here is visible
@@ -174,6 +201,11 @@ class GlobalDVBoundsAfterInitializeTest(unittest.TestCase):
         self.assertEqual(np.real(xub[dvNum]), 0.0)
 
     def test_array_zero_bounds_and_values_are_applied(self):
+        """
+        Given an array DV with zero entries in its value and bounds,
+        when the assembler is initialized,
+        then getDesignVarRange and getOrigDesignVars return the given bounds and values, zero entries included.
+        """
         fea_assembler = pytacs.pyTACS(bdf_file)
         dvNums = fea_assembler.addGlobalDV(
             "g", [0.0, 0.0, -9.81], lower=[0.0, -1.0, -20.0], upper=[0.0, 1.0, 0.0]
@@ -189,6 +221,10 @@ class GlobalDVBoundsAfterInitializeTest(unittest.TestCase):
 
     def test_unheld_dv_without_bounds_gets_unbounded_defaults(self):
         """
+        Given a global DV with no bounds that is held by no regular element,
+        when the assembler is initialized,
+        then getDesignVarRange returns the unbounded defaults for it and its initial value lies within them.
+
         A global dv consumed only by aux element loads is held by no regular
         element at initialize, so getDesignVarRange leaves its entries at the
         zeros of createDesignVec. The unbounded defaults have to be filled in
@@ -206,6 +242,11 @@ class GlobalDVBoundsAfterInitializeTest(unittest.TestCase):
         self.assertLessEqual(x0[dvNum], np.real(xub[dvNum]))
 
     def test_unheld_dv_with_one_sided_bound_defaults_the_other_side(self):
+        """
+        Given a global DV held by no element and added with only a lower bound,
+        when the assembler is initialized,
+        then getDesignVarRange returns the given lower bound and the unbounded default upper bound.
+        """
         fea_assembler = pytacs.pyTACS(bdf_file)
         dvNum = fea_assembler.addGlobalDV("pressure", 100e5, lower=0.0)
         fea_assembler.initialize()
@@ -215,6 +256,11 @@ class GlobalDVBoundsAfterInitializeTest(unittest.TestCase):
         self.assertEqual(np.real(xub[dvNum]), 1e20)
 
     def test_partially_held_array_dv_without_bounds(self):
+        """
+        Given an unbounded array DV whose first entry is a point mass DV and whose second entry is held by no element,
+        when the assembler is initialized,
+        then getDesignVarRange returns the mass element's range for the first entry and the unbounded defaults for the second.
+        """
         # Entry 0 is held by the point mass element, which reports its own
         # range (mass constitutive lower bound is 0, not -1e20), while entry 1
         # is held by nothing and needs the unbounded defaults
@@ -229,11 +275,12 @@ class GlobalDVBoundsAfterInitializeTest(unittest.TestCase):
 
     def test_zero_overwrites_a_nonzero_entry(self):
         """
-        The two tests above only pin the observable behaviour; they cannot tell
-        an insert from a non-zero insert, because an unclaimed global dv entry
-        already defaults to zero. This checks the insert directly: a zero value
-        has to overwrite whatever the elements put in the vector, which is what
-        breaks if the values are inserted with INSERT_NONZERO_VALUES.
+        Assert that _setGlobalDVValues overwrites a nonzero design vector entry with a zero value.
+
+        The zero-bound tests in this class only pin the observable behaviour; they
+        cannot tell an insert from a non-zero insert, because an unclaimed global dv
+        entry already defaults to zero. This checks the insert directly, which breaks
+        if the values are inserted with INSERT_NONZERO_VALUES.
         """
         fea_assembler = pytacs.pyTACS(bdf_file)
         dvNum = fea_assembler.addGlobalDV("point_mass", 20.0)
@@ -303,11 +350,18 @@ class GlobalDVDistributionTest(unittest.TestCase):
         problem.setDesignVars(x)
 
     def test_both_ranks_own_elements(self):
+        """Assert that both ranks own elements of the plate, which the other tests in this class rely on."""
         # Otherwise nothing below depends on the dv distribution
         num_owned = self.comm.allgather(self.fea_assembler.assembler.getNumElements())
         self.assertTrue(all(num > 0 for num in num_owned))
 
     def test_values_and_bounds_are_inserted(self):
+        """
+        Given global DVs with zero entries and an unbounded pressure DV held by no element, on two ranks,
+        when the assembler is initialized,
+        then the gathered design vector and bounds hold the global DV values and bounds, the pressure DV's
+        unbounded defaults, and the unchanged element thickness DVs.
+        """
         xlb, xub = self.fea_assembler.getDesignVarRange()
         xlb = self.gather(xlb)
         xub = self.gather(xub)
@@ -331,6 +385,11 @@ class GlobalDVDistributionTest(unittest.TestCase):
         np.testing.assert_array_equal(x0[num_global_dvs:], 0.01)
 
     def test_static_load_dv_reaches_every_rank(self):
+        """
+        Given a static problem with a pressure load on every component controlled by a global DV, on two ranks,
+        when the pressure DV is doubled on the rank that owns it and the problem is solved again,
+        then the state norm doubles, so the load elements on every rank received the new pressure.
+        """
         problem = self.fea_assembler.createStaticProblem("pressure")
         problem.addPressureToComponents(
             self.comp_ids, self.P, pressureDVNums=self.p_dv_num
@@ -347,6 +406,12 @@ class GlobalDVDistributionTest(unittest.TestCase):
         np.testing.assert_allclose(norm1, 2.0 * norm0, rtol=1e-8)
 
     def test_transient_load_dv_reaches_every_rank(self):
+        """
+        Given a transient problem with a pressure load on every component at every time step, controlled by a global DV,
+        on two ranks,
+        when the pressure DV is doubled on the rank that owns it and the problem is solved again,
+        then the final state norm doubles, so the load elements of every time step on every rank received the new pressure.
+        """
         # A transient problem owns one set of load elements per time step, and
         # updates them without going through the assembler
         num_steps = 3
@@ -372,6 +437,11 @@ class TacsDVCompArrayMassTest(unittest.TestCase):
     N_PROCS = 1
 
     def test_array_mass_dv_split(self):
+        """
+        Given an array global DV with only its first entry assigned as a mass DV,
+        when a TacsDVComp is set up with the mass DVs separated and its mass DV is changed,
+        then only that entry is split out of the struct DVs and the full TACS DV vector is reassembled in the original order.
+        """
         fea_assembler = pytacs.pyTACS(bdf_file)
         fea_assembler.addGlobalDV("point_dvs", [20.0, 9.81])
         fea_assembler.assignMassDV("point_dvs", 1, "m", index=0)

@@ -66,11 +66,18 @@ class ShortTractionTest(unittest.TestCase):
         return " ".join(output.replace("|", " ").split())
 
     def test_element_expects_four_components(self):
+        """Assert that the model's thermoelastic elements expect 4 traction components, which the other tests rely on."""
         for elem_id in self.elem_ids:
             elem = self.fea_assembler.meshLoader.getElementObjectForElemID(elem_id)
             self.assertEqual(elem.getNumTractionComponents(), 4)
 
     def test_short_traction_warns_once(self):
+        """
+        Given a static problem on thermoelastic elements,
+        when addTractionToElements adds a 3-component traction to every element,
+        then a single warning is printed, naming the number of components given,
+        the number of elements and the number of components expected.
+        """
         output = self.capture_warnings(
             self.problem.addTractionToElements,
             self.elem_ids,
@@ -83,12 +90,14 @@ class ShortTractionTest(unittest.TestCase):
         self.assertIn("expect 4", output)
 
     def test_short_traction_to_components_warns_once(self):
+        """Assert that addTractionToComponents prints the missing-components warning once when a 3-component traction is added to every component."""
         output = self.capture_warnings(
             self.problem.addTractionToComponents, self.comp_ids, [1.0, 2.0, 3.0]
         )
         self.assertEqual(output.count(WARNING_TEXT), 1)
 
     def test_full_traction_does_not_warn(self):
+        """Assert that addTractionToElements prints no missing-components warning for a traction with all 4 components."""
         output = self.capture_warnings(
             self.problem.addTractionToElements, self.elem_ids, [1.0, 2.0, 3.0, 4.0]
         )
@@ -96,8 +105,9 @@ class ShortTractionTest(unittest.TestCase):
 
     def test_short_traction_dvs(self):
         """
-        The design variables of the short traction are exactly the ones given,
-        the padded heat flux is not a design variable.
+        Given a 3-component traction whose components are global DVs, added to every element,
+        when new values for those DVs are set through the problem,
+        then the problem's design vector holds the new values at those DV numbers.
         """
         self.capture_warnings(
             self.problem.addTractionToElements,

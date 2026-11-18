@@ -123,9 +123,9 @@ class ElementTest(unittest.TestCase):
 
     def test_short_traction_raises(self):
         """
-        A traction with fewer entries than the element reads (e.g. a mechanical
-        traction on a thermoelastic element) must raise an error rather than
-        letting the C++ code read past the end of the array.
+        Given a thermoelastic 3D element, which expects 4 traction components,
+        when createElementTraction is called with a 3-component traction, with or without traction DV numbers,
+        then a ValueError is raised instead of the C++ code reading past the end of the array.
         """
         model = elements.LinearThermoelasticity3D(
             constitutive.SolidConstitutive(self.props, t=1.0, tNum=0)
@@ -144,6 +144,7 @@ class ElementTest(unittest.TestCase):
                     element.createElementTraction(self.faceIndex, trac)
 
     def test_traction_dv_nums_length_mismatch(self):
+        """Assert that createElementTraction raises a ValueError when the number of traction DV numbers differs from the number of traction components."""
         element = elements.Element3D(self.models[1], self.bases[0])
         with self.assertRaises(ValueError):
             element.createElementTraction(
