@@ -262,21 +262,23 @@ class StructProblemPyOptTest(unittest.TestCase):
 
     def test_is_zero_jac_block(self):
         """
-        Assert that _isZeroJacBlock treats a sparse block as zero when it stores no nonzeros, whether or not the
-        constraint is linear, and a dense block as zero only when it is all zeros and the constraint is linear.
+        Assert that _isZeroJacBlock treats a block as zero only when the constraint is linear and the block holds
+        no nonzero values, whether it is sparse or dense.
         """
         import scipy.sparse as sparse
 
         isZero = self.structProb._isZeroJacBlock
-        # Sparse blocks fix the sparsity pattern, so an empty one stays empty
-        self.assertTrue(isZero(sparse.csr_matrix((2, 3)), False))
-        self.assertFalse(isZero(sparse.csr_matrix(np.eye(3)), False))
-        # A stored zero is not a nonzero
-        self.assertTrue(isZero(sparse.csr_matrix(([0.0], ([0], [0])), (2, 3)), False))
-        # A dense zero block of a nonlinear constraint may just be zero here
-        self.assertFalse(isZero(np.zeros((2, 3)), False))
+        empty = sparse.csr_matrix((2, 3))
+        storedZero = sparse.csr_matrix(([0.0], ([0], [0])), (2, 3))
+        # A linear constraint's Jacobian never changes, so a stored zero is still zero
+        self.assertTrue(isZero(empty, True))
+        self.assertTrue(isZero(storedZero, True))
+        self.assertFalse(isZero(sparse.csr_matrix(np.eye(3)), True))
         self.assertTrue(isZero(np.zeros((2, 3)), True))
         self.assertFalse(isZero(np.ones((2, 3)), True))
+        # Any block of a nonlinear constraint may just be zero at this design
+        for block in [empty, storedZero, np.zeros((2, 3))]:
+            self.assertFalse(isZero(block, False))
 
 
 if __name__ == "__main__":

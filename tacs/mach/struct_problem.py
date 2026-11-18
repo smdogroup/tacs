@@ -962,14 +962,16 @@ class StructProblem(BaseStructProblem):
         """
         Check whether a constraint Jacobian block can never be nonzero.
 
-        A sparse block fixes the sparsity pattern pyoptsparse uses for the rest
-        of the optimization, so a sparse block with no nonzeros stays empty. A
-        dense block is only known to stay zero if the constraint is linear;
-        for a nonlinear constraint it may just be zero at the initial design.
+        Only the Jacobian of a linear constraint is fixed. A block of a
+        nonlinear constraint may just be zero at the initial design, and
+        pyoptsparse silently ignores any DV group missing from a constraint's
+        ``wrt``, so dropping it would lose its later sensitivities.
         """
+        if not isLinear:
+            return False
         if sp.sparse.issparse(jacBlock):
             return jacBlock.count_nonzero() == 0
-        return isLinear and not np.any(jacBlock)
+        return not np.any(jacBlock)
 
     @updateDVGeo
     def evalFunctionsSens(self, funcsSens, evalFuncs=None):
