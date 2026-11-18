@@ -121,12 +121,11 @@ class ElementTest(unittest.TestCase):
                         )
                         self.assertFalse(fail)
 
-    def test_short_traction_is_padded(self):
+    def test_short_traction_raises(self):
         """
-        A traction with fewer entries than the element has variables per node
-        (e.g. a mechanical traction on a thermoelastic element) must behave as
-        if the missing entries were zero and not design variables, rather than
-        reading past the end of the arrays.
+        A traction with fewer entries than the element reads (e.g. a mechanical
+        traction on a thermoelastic element) must raise an error rather than
+        letting the C++ code read past the end of the array.
         """
         model = elements.LinearThermoelasticity3D(
             constitutive.SolidConstitutive(self.props, t=1.0, tNum=0)
@@ -139,16 +138,10 @@ class ElementTest(unittest.TestCase):
             with self.subTest(basis=basis):
                 element = elements.Element3D(model, basis)
                 self.assertEqual(element.getNumTractionComponents(), num_vars)
-                # Repeat the call so that whatever happens to sit after the
-                # short arrays in memory varies
-                for _ in range(20):
-                    short = element.createElementTraction(self.faceIndex, trac, dv_nums)
-                    np.testing.assert_array_equal(
-                        short.getDesignVarNums(self.elem_index), dv_nums
-                    )
-                    np.testing.assert_array_equal(
-                        short.getDesignVars(self.elem_index), trac
-                    )
+                with self.assertRaises(ValueError):
+                    element.createElementTraction(self.faceIndex, trac, dv_nums)
+                with self.assertRaises(ValueError):
+                    element.createElementTraction(self.faceIndex, trac)
 
     def test_traction_dv_nums_length_mismatch(self):
         element = elements.Element3D(self.models[1], self.bases[0])

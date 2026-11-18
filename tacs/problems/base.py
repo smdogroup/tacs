@@ -591,15 +591,16 @@ class TACSProblem(TACSSystem):
                 elemObj = self.meshLoader.getElementObjectForElemID(
                     elemIDs[i], nastranOrdering=nastranOrdering
                 )
-                # The missing components of a short traction are set to zero
-                if elemObj.getNumTractionComponents() > tracLen:
+                # Pad a short traction with zero values that are not design variables
+                trac = tractions[i]
+                tracDVNums = np.ascontiguousarray(tractionDVNums[i])
+                numMissing = elemObj.getNumTractionComponents() - tracLen
+                if numMissing > 0:
                     numTracExpected[i] = elemObj.getNumTractionComponents()
+                    trac = np.pad(trac, (0, numMissing))
+                    tracDVNums = np.pad(tracDVNums, (0, numMissing), constant_values=-1)
                 # Create an appropriate traction object for this element type
-                tracObj = elemObj.createElementTraction(
-                    faceIndex,
-                    tractions[i],
-                    np.ascontiguousarray(tractionDVNums[i]),
-                )
+                tracObj = elemObj.createElementTraction(faceIndex, trac, tracDVNums)
                 # Traction not implemented for this element
                 if tracObj is None:
                     self._TACSWarning(

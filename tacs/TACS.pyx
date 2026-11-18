@@ -367,39 +367,31 @@ cdef class Element:
         """
         Create a traction element for this element.
 
-        If the traction has fewer entries than the element reads (see
-        getNumTractionComponents), the missing entries are taken as zero and
-        are not design variables. For example, a traction with 3 entries on a
-        thermoelastic solid applies no heat flux.
-
         Args:
             faceIndex (int): Face (side) of the element the traction acts on
-            trac (np.ndarray): Traction components
+            trac (np.ndarray): Traction components, at least
+                getNumTractionComponents() long
             tracDVNums (np.ndarray, optional): Global design variable number
                 controlling each traction component, negative for none.
                 Must be the same length as trac.
         """
         cdef TACSElement *tracElem = NULL
-        cdef int ntrac = trac.shape[0]
-        cdef int size = 0
-        cdef np.ndarray[TacsScalar, ndim=1, mode='c'] tracPad
-        cdef np.ndarray[int, ndim=1, mode='c'] dvNumsPad
-        if tracDVNums is not None and tracDVNums.shape[0] != ntrac:
-            raise ValueError(
-                f"tracDVNums length ({tracDVNums.shape[0]}) must match "
-                f"trac length ({ntrac})"
-            )
+        cdef int *dvNums = NULL
+        if tracDVNums is not None:
+            if tracDVNums.shape[0] != trac.shape[0]:
+                raise ValueError(
+                    f"tracDVNums length ({tracDVNums.shape[0]}) must match "
+                    f"trac length ({trac.shape[0]})"
+                )
+            dvNums = <int*>tracDVNums.data
         if self.ptr:
-            # The C++ traction classes read a fixed number of entries from both
-            # arrays, regardless of how many the caller supplied
-            size = max(ntrac, self.ptr.getNumTractionComponents())
-            tracPad = np.zeros(size, dtype=dtype)
-            tracPad[:ntrac] = trac
-            dvNumsPad = np.full(size, -1, dtype=np.intc)
-            if tracDVNums is not None:
-                dvNumsPad[:ntrac] = tracDVNums
-            tracElem = self.ptr.createElementTraction(faceIndex, <TacsScalar*>tracPad.data,
-                                                      <int*>dvNumsPad.data)
+            # The C++ traction classes read a fixed number of entries from both arrays
+            if trac.shape[0] < self.ptr.getNumTractionComponents():
+                raise ValueError(
+                    f"trac length ({trac.shape[0]}) must be at least "
+                    f"{self.ptr.getNumTractionComponents()} for this element"
+                )
+            tracElem = self.ptr.createElementTraction(faceIndex, <TacsScalar*>trac.data, dvNums)
             if tracElem != NULL:
                 return _init_Element(tracElem)
         return None
