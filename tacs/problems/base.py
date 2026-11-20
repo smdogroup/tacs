@@ -5,9 +5,13 @@ pyBase_problem
 # =============================================================================
 # Imports
 # =============================================================================
+from __future__ import annotations
+
+import warnings
 from collections import OrderedDict
 
 import numpy as np
+import numpy.typing as npt
 from mpi4py import MPI
 
 import tacs.TACS
@@ -829,7 +833,50 @@ class TACSProblem(TACSSystem):
                     "Double check BDF file.".format(elemIDs[i], orderString)
                 )
 
-    def _addInertialLoad(self, auxElems, inertiaVector, inertiaVecDVNums=None):
+    @staticmethod
+    def _resolveDeprecatedAccelVec(
+        accelVec: npt.ArrayLike | None, inertiaVector: npt.ArrayLike | None
+    ) -> npt.ArrayLike:
+        """
+        Resolve the deprecated ``inertiaVector`` keyword of ``addInertialLoad`` into ``accelVec``.
+
+        Parameters
+        ----------
+        accelVec : numpy.ndarray or None
+            Acceleration vector passed under the new name.
+        inertiaVector : numpy.ndarray or None
+            Acceleration vector passed under the deprecated name.
+
+        Returns
+        -------
+        numpy.ndarray
+            The acceleration vector to use.
+
+        Raises
+        ------
+        ValueError
+            If both ``accelVec`` and ``inertiaVector`` are given.
+        TypeError
+            If neither is given.
+        """
+        if inertiaVector is not None:
+            # Deprecated in v3.13, remove in v3.15
+            warnings.warn(
+                "The 'inertiaVector' argument of addInertialLoad is deprecated as of v3.13 and will be "
+                "removed in v3.15. Use 'accelVec' instead.",
+                DeprecationWarning,
+                stacklevel=3,
+            )
+            if accelVec is not None:
+                raise ValueError(
+                    "Cannot specify both 'accelVec' and deprecated 'inertiaVector' argument."
+                )
+            return inertiaVector
+        if accelVec is None:
+            raise TypeError("addInertialLoad() missing required argument: 'accelVec'")
+        return accelVec
+
+    def _addInertialLoad(self, auxElems, accelVec, accelVecDVNums=None):
         """
         This is an internal helper function for doing the addInertialLoad method for
         inherited TACSProblem classes. The function should NOT be called by the user should
@@ -842,26 +889,24 @@ class TACSProblem(TACSSystem):
          auxElems : tacs.TACS.AuxElements
             AuxElements object to add loads to.
 
-        inertiaVector : numpy.ndarray
+        accelVec : numpy.ndarray
             Acceleration vector used to define inertial load.
 
-        inertiaVecDVNums : numpy.ndarray or None
+        accelVecDVNums : numpy.ndarray or None
             Optional array of global design variable numbers (length must match
-            inertiaVector) controlling each entry of the inertia vector. Use negative values
+            accelVec) controlling each entry of the acceleration vector. Use negative values
             for components that should not be treated as design variables.
         """
         # Make sure vector is right type
-        inertiaVector = np.atleast_1d(inertiaVector).astype(self.dtype)
+        accelVec = np.atleast_1d(accelVec).astype(self.dtype)
         # Make sure design variable numbers are valid
-        inertiaVecDVNums = self._checkDVNums(inertiaVecDVNums)
+        accelVecDVNums = self._checkDVNums(accelVecDVNums)
         # Get elements on this processor
         localElements = self.assembler.getElements()
         # Loop through every element and apply inertial load
         for elemID, elemObj in enumerate(localElements):
             # Create appropriate inertial force object for this element type
-            inertiaObj = elemObj.createElementInertialForce(
-                inertiaVector, inertiaVecDVNums
-            )
+            inertiaObj = elemObj.createElementInertialForce(accelVec, accelVecDVNums)
             # Inertial force is implemented for element
             if inertiaObj is not None:
                 # Add new inertial force to auxiliary element object
@@ -979,11 +1024,11 @@ class TACSProblem(TACSSystem):
 
             # Add any gravity loads
             elif loadInfo.type == "GRAV":
-                inertiaVec = np.zeros(3, dtype=self.dtype)
-                inertiaVec[:3] = scale * loadInfo.scale * loadInfo.N
+                accelVec = np.zeros(3, dtype=self.dtype)
+                accelVec[:3] = scale * loadInfo.scale * loadInfo.N
                 # Convert acceleration to global coordinate system
-                inertiaVec = loadInfo.cid_ref.transform_vector_to_global(inertiaVec)
-                self._addInertialLoad(auxElems, inertiaVec)
+                accelVec = loadInfo.cid_ref.transform_vector_to_global(accelVec)
+                self._addInertialLoad(auxElems, accelVec)
 
             # Add any centrifugal loads
             elif loadInfo.type == "RFORCE":

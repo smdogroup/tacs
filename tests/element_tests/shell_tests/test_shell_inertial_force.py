@@ -43,7 +43,7 @@ class ElementTest(unittest.TestCase):
         self.ddvars = self.vars.copy()
         # Traction vector and selected element face
         np.random.seed(30)  # Seed random numbers for deterministic/repeatable tests
-        # Gravity inertial vector
+        # Gravity acceleration vector
         self.g = 9.81 * np.array([1.0, 1.0, 1.0], dtype=self.dtype)
 
         # Create the isotropic material

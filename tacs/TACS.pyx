@@ -405,19 +405,19 @@ cdef class Element:
                 return _init_Element(pressElem)
         return None
 
-    def createElementInertialForce(self, np.ndarray[TacsScalar, ndim=1] inertiaVec,
-                                   np.ndarray[int, ndim=1, mode='c'] inertiaVecDVNums=None):
+    def createElementInertialForce(self, np.ndarray[TacsScalar, ndim=1] accelVec,
+                                   np.ndarray[int, ndim=1, mode='c'] accelVecDVNums=None):
         cdef TACSElement *inertiaElem = NULL
         cdef int *dvNums = NULL
-        if inertiaVecDVNums is not None:
-            if len(inertiaVecDVNums) != len(inertiaVec):
+        if accelVecDVNums is not None:
+            if len(accelVecDVNums) != len(accelVec):
                 raise ValueError(
-                    f"inertiaVecDVNums length ({len(inertiaVecDVNums)}) must match "
-                    f"inertiaVec length ({len(inertiaVec)})"
+                    f"accelVecDVNums length ({len(accelVecDVNums)}) must match "
+                    f"accelVec length ({len(accelVec)})"
                 )
-            dvNums = <int*>inertiaVecDVNums.data
+            dvNums = <int*>accelVecDVNums.data
         if self.ptr:
-            inertiaElem = self.ptr.createElementInertialForce(<TacsScalar*>inertiaVec.data, dvNums)
+            inertiaElem = self.ptr.createElementInertialForce(<TacsScalar*>accelVec.data, dvNums)
             if inertiaElem != NULL:
                 return _init_Element(inertiaElem)
         return None

@@ -240,7 +240,7 @@ class TACSElement : public TACSObject {
     Possibly NULL.
   */
   virtual TACSElement *createElementInertialForce(
-      const TacsScalar g[], const int *inertiaVecDVNums = NULL) {
+      const TacsScalar accelVec[], const int *accelVecDVNums = NULL) {
     return NULL;
   }
 

@@ -12,15 +12,15 @@ template <int vars_per_node, class quadrature, class basis>
 class TACSShellInertialForce : public TACSElement {
  public:
   TACSShellInertialForce(TACSShellConstitutive *_con,
-                         const TacsScalar _inertiaVec[],
-                         const int *_inertiaVecDVNums = NULL) {
+                         const TacsScalar _accelVec[],
+                         const int *_accelVecDVNums = NULL) {
     con = _con;
     con->incref();
-    std::copy_n(_inertiaVec, 3, inertiaVec);
-    if (_inertiaVecDVNums) {
-      std::copy_n(_inertiaVecDVNums, 3, inertiaVecDVNums);
+    std::copy_n(_accelVec, 3, accelVec);
+    if (_accelVecDVNums) {
+      std::copy_n(_accelVecDVNums, 3, accelVecDVNums);
     } else {
-      inertiaVecDVNums[0] = inertiaVecDVNums[1] = inertiaVecDVNums[2] = -1;
+      accelVecDVNums[0] = accelVecDVNums[1] = accelVecDVNums[2] = -1;
     }
   }
 
@@ -61,9 +61,9 @@ class TACSShellInertialForce : public TACSElement {
   int getDesignVarNums(int elemIndex, int dvLen, int dvNums[]) {
     int num = con->getDesignVarNums(elemIndex, dvLen, dvNums);
     for (int i = 0; i < 3; i++) {
-      if (inertiaVecDVNums[i] >= 0) {
+      if (accelVecDVNums[i] >= 0) {
         if (dvNums && num < dvLen) {
-          dvNums[num] = inertiaVecDVNums[i];
+          dvNums[num] = accelVecDVNums[i];
         }
         num++;
       }
@@ -74,9 +74,9 @@ class TACSShellInertialForce : public TACSElement {
   int setDesignVars(int elemIndex, int dvLen, const TacsScalar dvs[]) {
     int num = con->setDesignVars(elemIndex, dvLen, dvs);
     for (int i = 0; i < 3; i++) {
-      if (inertiaVecDVNums[i] >= 0) {
+      if (accelVecDVNums[i] >= 0) {
         if (num < dvLen) {
-          inertiaVec[i] = dvs[num];
+          accelVec[i] = dvs[num];
         }
         num++;
       }
@@ -87,9 +87,9 @@ class TACSShellInertialForce : public TACSElement {
   int getDesignVars(int elemIndex, int dvLen, TacsScalar dvs[]) {
     int num = con->getDesignVars(elemIndex, dvLen, dvs);
     for (int i = 0; i < 3; i++) {
-      if (inertiaVecDVNums[i] >= 0) {
+      if (accelVecDVNums[i] >= 0) {
         if (dvs && num < dvLen) {
-          dvs[num] = inertiaVec[i];
+          dvs[num] = accelVec[i];
         }
         num++;
       }
@@ -101,7 +101,7 @@ class TACSShellInertialForce : public TACSElement {
                         TacsScalar ub[]) {
     int num = con->getDesignVarRange(elemIndex, dvLen, lb, ub);
     for (int i = 0; i < 3; i++) {
-      if (inertiaVecDVNums[i] >= 0) {
+      if (accelVecDVNums[i] >= 0) {
         if (num < dvLen) {
           lb[num] = -TACS_LARGE_DV_BOUND;
           ub[num] = TACS_LARGE_DV_BOUND;
@@ -147,11 +147,11 @@ class TACSShellInertialForce : public TACSElement {
 
       // Compute the traction
       TacsScalar tr[vars_per_node] = {0.0};
-      tr[0] = -detXd * mass * inertiaVec[0];
-      tr[1] = -detXd * mass * inertiaVec[1];
-      tr[2] = -detXd * mass * inertiaVec[2];
+      tr[0] = -detXd * mass * accelVec[0];
+      tr[1] = -detXd * mass * accelVec[1];
+      tr[2] = -detXd * mass * accelVec[2];
       // Add moment terms if theres a shell offset
-      crossProductAdd(detXd * moments[1], n, inertiaVec, &tr[3]);
+      crossProductAdd(detXd * moments[1], n, accelVec, &tr[3]);
 
       basis::template addInterpFieldsTranspose<vars_per_node, vars_per_node>(
           pt, tr, res);
@@ -159,8 +159,8 @@ class TACSShellInertialForce : public TACSElement {
   }
 
  private:
-  TacsScalar inertiaVec[3];
-  int inertiaVecDVNums[3];
+  TacsScalar accelVec[3];
+  int accelVecDVNums[3];
   TACSShellConstitutive *con;
 };
 

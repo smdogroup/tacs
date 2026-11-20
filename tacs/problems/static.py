@@ -792,7 +792,7 @@ class StaticProblem(TACSProblem):
             pressureDVNums,
         )
 
-    def addInertialLoad(self, inertiaVector, inertiaVecDVNums=None):
+    def addInertialLoad(self, accelVec=None, accelVecDVNums=None, inertiaVector=None):
         """
         This method is used to add a fixed inertial load due to
         a uniform acceleration over the entire model.
@@ -800,18 +800,23 @@ class StaticProblem(TACSProblem):
 
         Parameters
         ----------
-        inertiaVector : numpy.ndarray
+        accelVec : numpy.ndarray
             Acceleration vector used to define inertial load.
 
-        inertiaVecDVNums : numpy.ndarray or None
+        accelVecDVNums : numpy.ndarray or None
             Optional array of global design variable numbers (length must match
-            inertiaVector) controlling each entry of the inertia vector. Use negative values
+            accelVec) controlling each entry of the acceleration vector. Use negative values
             for components that should not be treated as design variables.
             The dv num array returned by an array-valued
             :meth:`pyTACS.addGlobalDV <tacs.pytacs.pyTACS.addGlobalDV>` call
             can be passed directly.
+
+        inertiaVector : numpy.ndarray or None
+            .. deprecated:: 3.13
+                Use ``accelVec`` instead. This argument will be removed in v3.15.
         """
-        self._addInertialLoad(self.auxElems, inertiaVector, inertiaVecDVNums)
+        accelVec = self._resolveDeprecatedAccelVec(accelVec, inertiaVector)
+        self._addInertialLoad(self.auxElems, accelVec, accelVecDVNums)
 
     def addCentrifugalLoad(
         self,

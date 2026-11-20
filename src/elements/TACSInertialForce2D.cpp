@@ -21,18 +21,18 @@
 TACSInertialForce2D::TACSInertialForce2D(int _varsPerNode,
                                          TACSConstitutive *_con,
                                          TACSElementBasis *_basis,
-                                         const TacsScalar _inertiaVec[],
-                                         const int *_inertiaVecDVNums) {
+                                         const TacsScalar _accelVec[],
+                                         const int *_accelVecDVNums) {
   varsPerNode = _varsPerNode;
   con = _con;
   con->incref();
   basis = _basis;
   basis->incref();
-  std::copy_n(_inertiaVec, 2, inertiaVec);
-  if (_inertiaVecDVNums) {
-    std::copy_n(_inertiaVecDVNums, 2, inertiaVecDVNums);
+  std::copy_n(_accelVec, 2, accelVec);
+  if (_accelVecDVNums) {
+    std::copy_n(_accelVecDVNums, 2, accelVecDVNums);
   } else {
-    inertiaVecDVNums[0] = inertiaVecDVNums[1] = -1;
+    accelVecDVNums[0] = accelVecDVNums[1] = -1;
   }
 }
 
@@ -85,9 +85,9 @@ int TACSInertialForce2D::getDesignVarNums(int elemIndex, int dvLen,
                                           int dvNums[]) {
   int num = con->getDesignVarNums(elemIndex, dvLen, dvNums);
   for (int i = 0; i < 2; i++) {
-    if (inertiaVecDVNums[i] >= 0) {
+    if (accelVecDVNums[i] >= 0) {
       if (dvNums && num < dvLen) {
-        dvNums[num] = inertiaVecDVNums[i];
+        dvNums[num] = accelVecDVNums[i];
       }
       num++;
     }
@@ -99,9 +99,9 @@ int TACSInertialForce2D::setDesignVars(int elemIndex, int dvLen,
                                        const TacsScalar dvs[]) {
   int num = con->setDesignVars(elemIndex, dvLen, dvs);
   for (int i = 0; i < 2; i++) {
-    if (inertiaVecDVNums[i] >= 0) {
+    if (accelVecDVNums[i] >= 0) {
       if (num < dvLen) {
-        inertiaVec[i] = dvs[num];
+        accelVec[i] = dvs[num];
       }
       num++;
     }
@@ -113,9 +113,9 @@ int TACSInertialForce2D::getDesignVars(int elemIndex, int dvLen,
                                        TacsScalar dvs[]) {
   int num = con->getDesignVars(elemIndex, dvLen, dvs);
   for (int i = 0; i < 2; i++) {
-    if (inertiaVecDVNums[i] >= 0) {
+    if (accelVecDVNums[i] >= 0) {
       if (dvs && num < dvLen) {
-        dvs[num] = inertiaVec[i];
+        dvs[num] = accelVec[i];
       }
       num++;
     }
@@ -127,7 +127,7 @@ int TACSInertialForce2D::getDesignVarRange(int elemIndex, int dvLen,
                                            TacsScalar lb[], TacsScalar ub[]) {
   int num = con->getDesignVarRange(elemIndex, dvLen, lb, ub);
   for (int i = 0; i < 2; i++) {
-    if (inertiaVecDVNums[i] >= 0) {
+    if (accelVecDVNums[i] >= 0) {
       if (num < dvLen) {
         lb[num] = -TACS_LARGE_DV_BOUND;
         ub[num] = TACS_LARGE_DV_BOUND;
@@ -171,7 +171,7 @@ void TACSInertialForce2D::addResidual(
     TacsScalar density = con->evalDensity(elemIndex, pt, X);
 
     for (int k = 0; k < 2; k++) {
-      DUt[3 * k] = -density * inertiaVec[k];
+      DUt[3 * k] = -density * accelVec[k];
     }
 
     // Add the weak form of the residual at this point
@@ -216,7 +216,7 @@ void TACSInertialForce2D::addJacobian(int elemIndex, double time,
     TacsScalar density = con->evalDensity(elemIndex, pt, X);
 
     for (int k = 0; k < 2; k++) {
-      DUt[3 * k] = -density * inertiaVec[k];
+      DUt[3 * k] = -density * accelVec[k];
     }
 
     // Add the weak form of the residual at this point

@@ -199,10 +199,10 @@ class TACSBeamElement : public TACSElement {
                                                                   tracDVNums);
   }
 
-  TACSElement *createElementInertialForce(const TacsScalar inertiaVec[],
-                                          const int *inertiaVecDVNums = NULL) {
+  TACSElement *createElementInertialForce(const TacsScalar accelVec[],
+                                          const int *accelVecDVNums = NULL) {
     return new TACSBeamInertialForce<vars_per_node, quadrature, basis>(
-        transform, con, inertiaVec, inertiaVecDVNums);
+        transform, con, accelVec, accelVecDVNums);
   }
 
   TACSElement *createElementCentrifugalForce(

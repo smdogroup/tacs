@@ -747,7 +747,12 @@ class TransientProblem(TACSProblem):
         )
 
     def addInertialLoad(
-        self, timeStep, inertiaVector, timeStage=None, inertiaVecDVNums=None
+        self,
+        timeStep,
+        accelVec=None,
+        timeStage=None,
+        accelVecDVNums=None,
+        inertiaVector=None,
     ):
         """
         This method is used to add a fixed inertial load at a specified time step
@@ -759,7 +764,7 @@ class TransientProblem(TACSProblem):
         timeStep : int
             Time step index to apply load to.
 
-        inertiaVector : numpy.ndarray
+        accelVec : numpy.ndarray
             Acceleration vector used to define inertial load.
 
         timeStage : int or None
@@ -767,14 +772,19 @@ class TransientProblem(TACSProblem):
             multi-step methods like BDF. For multi-stage methods like DIRK, this index must
             be specified.
 
-        inertiaVecDVNums : numpy.ndarray or None
+        accelVecDVNums : numpy.ndarray or None
             Optional array of global design variable numbers (length must match
-            inertiaVector) controlling each entry of the inertia vector. Use negative values
+            accelVec) controlling each entry of the acceleration vector. Use negative values
             for components that should not be treated as design variables.
             The dv num array returned by an array-valued
             :meth:`pyTACS.addGlobalDV <tacs.pytacs.pyTACS.addGlobalDV>` call
             can be passed directly.
+
+        inertiaVector : numpy.ndarray or None
+            .. deprecated:: 3.13
+                Use ``accelVec`` instead. This argument will be removed in v3.15.
         """
+        accelVec = self._resolveDeprecatedAccelVec(accelVec, inertiaVector)
         timeIndex = 0
         if self.numStages is None:
             timeIndex = timeStep
@@ -785,7 +795,7 @@ class TransientProblem(TACSProblem):
             )
             timeIndex = timeStep * self.numStages + timeStage
 
-        self._addInertialLoad(self.auxElems[timeIndex], inertiaVector, inertiaVecDVNums)
+        self._addInertialLoad(self.auxElems[timeIndex], accelVec, accelVecDVNums)
 
     def addCentrifugalLoad(
         self,

@@ -70,7 +70,7 @@ class StructProblemPyOptTest(unittest.TestCase):
         staticProb = FEAAssembler.createStaticProblem(name)
         staticProb.addFunction("mass", functions.StructuralMass)
         staticProb.addFunction("compliance", functions.Compliance)
-        staticProb.addInertialLoad(g, inertiaVecDVNums=gDVNums)
+        staticProb.addInertialLoad(g, accelVecDVNums=gDVNums)
         compIDs = FEAAssembler.selectCompIDs()
         staticProb.addPressureToComponents(compIDs, P, pressureDVNums=pDVNums[0])
 

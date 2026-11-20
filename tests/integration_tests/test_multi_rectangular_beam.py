@@ -107,7 +107,7 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
         fea_assembler.initialize(elem_call_back)
 
         grav_prob = fea_assembler.createStaticProblem("gravity")
-        grav_prob.addInertialLoad(g_vec, inertiaVecDVNums=gDV)
+        grav_prob.addInertialLoad(g_vec, accelVecDVNums=gDV)
 
         tacs_probs = [grav_prob]
 

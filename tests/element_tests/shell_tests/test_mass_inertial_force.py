@@ -48,7 +48,7 @@ class ElementTest(unittest.TestCase):
         I11 = I22 = I33 = 1.0
         I12 = I13 = I23 = 0.5
 
-        # Gravity inertial vector
+        # Gravity acceleration vector
         self.g = 9.81 * np.array([1.0, 1.0, 1.0], dtype=self.dtype)
 
         # Create constitutive classes

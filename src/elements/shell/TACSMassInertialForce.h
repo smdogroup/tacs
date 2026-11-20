@@ -7,8 +7,8 @@
 class TACSMassInertialForce : public TACSElement {
  public:
   TACSMassInertialForce(TACSGeneralMassConstitutive *_con,
-                        const TacsScalar *_inertiaVec,
-                        const int *_inertiaVecDVNums = NULL);
+                        const TacsScalar *_accelVec,
+                        const int *_accelVecDVNums = NULL);
   ~TACSMassInertialForce();
 
   // Get the element properties and names
@@ -29,9 +29,9 @@ class TACSMassInertialForce : public TACSElement {
   int getDesignVarNums(int elemIndex, int dvLen, int dvNums[]) {
     int num = con->getDesignVarNums(elemIndex, dvLen, dvNums);
     for (int i = 0; i < 3; i++) {
-      if (inertiaVecDVNums[i] >= 0) {
+      if (accelVecDVNums[i] >= 0) {
         if (dvNums && num < dvLen) {
-          dvNums[num] = inertiaVecDVNums[i];
+          dvNums[num] = accelVecDVNums[i];
         }
         num++;
       }
@@ -42,9 +42,9 @@ class TACSMassInertialForce : public TACSElement {
   int setDesignVars(int elemIndex, int dvLen, const TacsScalar dvs[]) {
     int num = con->setDesignVars(elemIndex, dvLen, dvs);
     for (int i = 0; i < 3; i++) {
-      if (inertiaVecDVNums[i] >= 0) {
+      if (accelVecDVNums[i] >= 0) {
         if (num < dvLen) {
-          inertiaVec[i] = dvs[num];
+          accelVec[i] = dvs[num];
         }
         num++;
       }
@@ -55,9 +55,9 @@ class TACSMassInertialForce : public TACSElement {
   int getDesignVars(int elemIndex, int dvLen, TacsScalar dvs[]) {
     int num = con->getDesignVars(elemIndex, dvLen, dvs);
     for (int i = 0; i < 3; i++) {
-      if (inertiaVecDVNums[i] >= 0) {
+      if (accelVecDVNums[i] >= 0) {
         if (dvs && num < dvLen) {
-          dvs[num] = inertiaVec[i];
+          dvs[num] = accelVec[i];
         }
         num++;
       }
@@ -69,7 +69,7 @@ class TACSMassInertialForce : public TACSElement {
                         TacsScalar ub[]) {
     int num = con->getDesignVarRange(elemIndex, dvLen, lb, ub);
     for (int i = 0; i < 3; i++) {
-      if (inertiaVecDVNums[i] >= 0) {
+      if (accelVecDVNums[i] >= 0) {
         if (num < dvLen) {
           lb[num] = -TACS_LARGE_DV_BOUND;
           ub[num] = TACS_LARGE_DV_BOUND;
@@ -114,8 +114,8 @@ class TACSMassInertialForce : public TACSElement {
   static const int NUM_VARIABLES = NUM_NODES * NUM_DISPS;
 
   TACSGeneralMassConstitutive *con;
-  TacsScalar inertiaVec[NUM_DISPS];
-  int inertiaVecDVNums[3];
+  TacsScalar accelVec[NUM_DISPS];
+  int accelVecDVNums[3];
 };
 
 #endif  // TACS_MASS_INERTIAL_FORCE_H

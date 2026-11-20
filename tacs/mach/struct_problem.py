@@ -119,7 +119,7 @@ class StructProblem(BaseStructProblem):
         # so that multiple StructProblems can coexist in the same optimisation
         # without key collisions.  This covers both classic mass DVs
         # (isMassDV=True) and auxiliary DVs such as load-factor variables
-        # wired to addInertialLoad via inertiaVecDVNums.
+        # wired to addInertialLoad via accelVecDVNums.
         globalDVs = self.FEAAssembler.getGlobalDVs()
 
         namesToPromote = list(promotedGlobalDVs) if promotedGlobalDVs else []

@@ -81,7 +81,7 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
         problem = fea_assembler.createTransientProblem("gravity", 0.0, 10.0, 100)
         g_vec = np.array([0.0, 0.0, 9.81], dtype=TACS.dtype)
         for step_i in range(len(timeSteps)):
-            problem.addInertialLoad(step_i, g_vec, inertiaVecDVNums=[-1, -1, dvNumG])
+            problem.addInertialLoad(step_i, g_vec, accelVecDVNums=[-1, -1, dvNumG])
         all_problems.append(problem)
 
         # Add Functions

@@ -116,10 +116,10 @@ class TACSShellElement : public TACSElement {
         p, pressureDVNum);
   }
 
-  TACSElement *createElementInertialForce(const TacsScalar inertiaVec[],
-                                          const int *inertiaVecDVNums = NULL) {
+  TACSElement *createElementInertialForce(const TacsScalar accelVec[],
+                                          const int *accelVecDVNums = NULL) {
     return new TACSShellInertialForce<vars_per_node, quadrature, basis>(
-        con, inertiaVec, inertiaVecDVNums);
+        con, accelVec, accelVecDVNums);
   }
 
   TACSElement *createElementCentrifugalForce(

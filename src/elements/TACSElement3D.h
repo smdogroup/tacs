@@ -40,8 +40,8 @@ class TACSElement3D : public TACSElement {
                                      const int *tracDVNums = NULL);
   TACSElement *createElementPressure(int faceIndex, TacsScalar p,
                                      int pressureDVNum = -1);
-  TACSElement *createElementInertialForce(const TacsScalar inertiaVec[],
-                                          const int *inertiaVecDVNums = NULL);
+  TACSElement *createElementInertialForce(const TacsScalar accelVec[],
+                                          const int *accelVecDVNums = NULL);
   TACSElement *createElementCentrifugalForce(const TacsScalar omegaVec[],
                                              const TacsScalar rotCenter[],
                                              const bool first_order = false,

@@ -357,7 +357,7 @@ class TestMACHWingboxExample(MACHStructProblemTestCase.MACHStructProblemTest):
         compIDs = FEAAssembler.selectCompIDs(["WING_L_SKIN"])
         staticProblem.addPressureToComponents(compIDs, -10e3)
 
-        staticProblem.addInertialLoad(g, inertiaVecDVNums=gDV)
+        staticProblem.addInertialLoad(g, accelVecDVNums=gDV)
 
         failureGroups = {"SPAR_RIB": ["SPAR", "RIB", "CAP"], "SKIN": ["SKIN"]}
 
