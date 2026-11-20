@@ -97,15 +97,19 @@ class MatXptSensInnerProductTest(unittest.TestCase):
         np.testing.assert_allclose(twice, 2.0 * once, rtol=1e-14)
 
     def test_stiffness_matchesFiniteDifference(self):
+        """Assert that the stiffness-matrix addMatXptSensInnerProduct, projected onto a random node perturbation, matches a central finite difference of psi^T K(X) phi."""
         self._checkFiniteDifference(TACS.STIFFNESS_MATRIX)
 
     def test_mass_matchesFiniteDifference(self):
+        """Assert that the mass-matrix addMatXptSensInnerProduct, projected onto a random node perturbation, matches a central finite difference of psi^T M(X) phi."""
         self._checkFiniteDifference(TACS.MASS_MATRIX)
 
     def test_stiffness_accumulates(self):
+        """Assert that calling the stiffness-matrix addMatXptSensInnerProduct twice on the same vector gives twice the single-call sensitivity."""
         self._checkAccumulates(TACS.STIFFNESS_MATRIX)
 
     def test_mass_accumulates(self):
+        """Assert that calling the mass-matrix addMatXptSensInnerProduct twice on the same vector gives twice the single-call sensitivity."""
         self._checkAccumulates(TACS.MASS_MATRIX)
 
 

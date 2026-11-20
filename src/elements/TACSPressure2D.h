@@ -20,7 +20,7 @@
 class TACSPressure2D : public TACSElement {
  public:
   TACSPressure2D(int _varsPerNode, int _faceIndex, TACSElementBasis *_basis,
-                 TacsScalar p);
+                 TacsScalar p, int _pressureDVNum = -1);
   ~TACSPressure2D();
 
   // Get the layout properties of the element
@@ -35,6 +35,27 @@ class TACSPressure2D : public TACSElement {
   int getNumElementFaces();
   int getNumFaceQuadraturePoints(int face);
   double getFaceQuadraturePoint(int face, int n, double pt[], double tangent[]);
+
+  /**
+      Retrieve the global design variable numbers associated with this element
+    */
+  int getDesignVarNums(int elemIndex, int dvLen, int dvNums[]);
+
+  /**
+    Set the element design variables from the design vector
+  */
+  int setDesignVars(int elemIndex, int dvLen, const TacsScalar dvs[]);
+
+  /**
+    Get the element design variables values
+  */
+  int getDesignVars(int elemIndex, int dvLen, TacsScalar dvs[]);
+
+  /**
+    Get the lower and upper bounds for the design variable values
+  */
+  int getDesignVarRange(int elemIndex, int dvLen, TacsScalar lb[],
+                        TacsScalar ub[]);
 
   /**
     Add the residual to the provided vector
@@ -55,6 +76,7 @@ class TACSPressure2D : public TACSElement {
   int varsPerNode, faceIndex;
   TACSElementBasis *basis;
   TacsScalar p;
+  int pressureDVNum;
 };
 
 #endif  // TACS_PRESSURE_2D_H

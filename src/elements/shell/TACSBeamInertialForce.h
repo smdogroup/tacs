@@ -1,6 +1,8 @@
 #ifndef TACS_BEAM_INERTIAL_FORCE_H
 #define TACS_BEAM_INERTIAL_FORCE_H
 
+#include <algorithm>
+
 #include "TACSBeamConstitutive.h"
 #include "TACSBeamElementBasis.h"
 #include "TACSBeamElementQuadrature.h"
@@ -17,14 +19,20 @@ class TACSBeamInertialForce : public TACSElement {
  public:
   TACSBeamInertialForce(TACSBeamTransform *_transform,
                         TACSBeamConstitutive *_con,
-                        const TacsScalar _inertiaVec[]) {
+                        const TacsScalar _accelVec[],
+                        const int *_accelVecDVNums = NULL) {
     transform = _transform;
     transform->incref();
 
     con = _con;
     con->incref();
 
-    memcpy(inertiaVec, _inertiaVec, 3 * sizeof(TacsScalar));
+    std::copy_n(_accelVec, 3, accelVec);
+    if (_accelVecDVNums) {
+      std::copy_n(_accelVecDVNums, 3, accelVecDVNums);
+    } else {
+      accelVecDVNums[0] = accelVecDVNums[1] = accelVecDVNums[2] = -1;
+    }
   }
 
   ~TACSBeamInertialForce() {
@@ -65,20 +73,57 @@ class TACSBeamInertialForce : public TACSElement {
   }
 
   int getDesignVarNums(int elemIndex, int dvLen, int dvNums[]) {
-    return con->getDesignVarNums(elemIndex, dvLen, dvNums);
+    int num = con->getDesignVarNums(elemIndex, dvLen, dvNums);
+    for (int i = 0; i < 3; i++) {
+      if (accelVecDVNums[i] >= 0) {
+        if (dvNums && num < dvLen) {
+          dvNums[num] = accelVecDVNums[i];
+        }
+        num++;
+      }
+    }
+    return num;
   }
 
   int setDesignVars(int elemIndex, int dvLen, const TacsScalar dvs[]) {
-    return con->setDesignVars(elemIndex, dvLen, dvs);
+    int num = con->setDesignVars(elemIndex, dvLen, dvs);
+    for (int i = 0; i < 3; i++) {
+      if (accelVecDVNums[i] >= 0) {
+        if (num < dvLen) {
+          accelVec[i] = dvs[num];
+        }
+        num++;
+      }
+    }
+    return num;
   }
 
   int getDesignVars(int elemIndex, int dvLen, TacsScalar dvs[]) {
-    return con->getDesignVars(elemIndex, dvLen, dvs);
+    int num = con->getDesignVars(elemIndex, dvLen, dvs);
+    for (int i = 0; i < 3; i++) {
+      if (accelVecDVNums[i] >= 0) {
+        if (dvs && num < dvLen) {
+          dvs[num] = accelVec[i];
+        }
+        num++;
+      }
+    }
+    return num;
   }
 
   int getDesignVarRange(int elemIndex, int dvLen, TacsScalar lb[],
                         TacsScalar ub[]) {
-    return con->getDesignVarRange(elemIndex, dvLen, lb, ub);
+    int num = con->getDesignVarRange(elemIndex, dvLen, lb, ub);
+    for (int i = 0; i < 3; i++) {
+      if (accelVecDVNums[i] >= 0) {
+        if (num < dvLen) {
+          lb[num] = -TACS_LARGE_DV_BOUND;
+          ub[num] = TACS_LARGE_DV_BOUND;
+        }
+        num++;
+      }
+    }
+    return num;
   }
 
   void addResidual(int elemIndex, double time, const TacsScalar *Xpts,
@@ -122,13 +167,13 @@ class TACSBeamInertialForce : public TACSElement {
 
       // Compute the traction
       TacsScalar tr[vars_per_node] = {0.0};
-      tr[0] = -detXd.value * weight * mass * inertiaVec[0];
-      tr[1] = -detXd.value * weight * mass * inertiaVec[1];
-      tr[2] = -detXd.value * weight * mass * inertiaVec[2];
+      tr[0] = -detXd.value * weight * mass * accelVec[0];
+      tr[1] = -detXd.value * weight * mass * accelVec[1];
+      tr[2] = -detXd.value * weight * mass * accelVec[2];
       // Add moment terms if theres a beam offset
-      crossProductAdd(detXd.value * weight * mass_moment[1], n1.x, inertiaVec,
+      crossProductAdd(detXd.value * weight * mass_moment[1], n1.x, accelVec,
                       &tr[3]);
-      crossProductAdd(detXd.value * weight * mass_moment[2], n2.x, inertiaVec,
+      crossProductAdd(detXd.value * weight * mass_moment[2], n2.x, accelVec,
                       &tr[3]);
 
       basis::template addInterpFieldsTranspose<vars_per_node, vars_per_node>(
@@ -137,7 +182,8 @@ class TACSBeamInertialForce : public TACSElement {
   }
 
  private:
-  TacsScalar inertiaVec[3];
+  TacsScalar accelVec[3];
+  int accelVecDVNums[3];
   TACSBeamTransform *transform;
   TACSBeamConstitutive *con;
 };

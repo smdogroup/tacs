@@ -59,6 +59,13 @@ typedef double TacsScalar;
 #endif
 
 /*
+  Bound used for design variables that are effectively unbounded. Elements and
+  constitutive objects report this from getDesignVarRange when a design variable
+  has no meaningful physical limit.
+*/
+static const double TACS_LARGE_DV_BOUND = 1e20;
+
+/*
   Define the macro to add flop counts. This does not work for threaded
   implementations. Don't use it in threaded code!
 

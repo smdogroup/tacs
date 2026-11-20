@@ -583,8 +583,8 @@ char *TACSToFH5::getElementVarNames(int flag) {
         stemp = TacsGetOutputComponentName(elem_type, out_types[k], i);
         str_len += strlen(stemp) + 1;
       }
-      char *temp = new char[str_len];
       if (nd > 0) {
+        char *temp = new char[str_len];
         stemp = TacsGetOutputComponentName(elem_type, out_types[k], 0);
         strcpy(temp, stemp);
         for (int i = 1; i < nd; i++) {
@@ -592,8 +592,8 @@ char *TACSToFH5::getElementVarNames(int flag) {
           size_t len = strlen(temp);
           snprintf(&(temp[len]), str_len - len, ",%s", stemp);
         }
+        output_names[k] = temp;
       }
-      output_names[k] = temp;
     }
   }
 

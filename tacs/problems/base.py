@@ -5,9 +5,13 @@ pyBase_problem
 # =============================================================================
 # Imports
 # =============================================================================
+from __future__ import annotations
+
+import warnings
 from collections import OrderedDict
 
 import numpy as np
+import numpy.typing as npt
 from mpi4py import MPI
 
 import tacs.TACS
@@ -52,6 +56,10 @@ class TACSProblem(TACSSystem):
 
         # Set attributes and options
         TACSSystem.__init__(self, assembler, comm, options, outputViewer, meshLoader)
+
+        # Save global DV indices registered with the assembler so that
+        # _checkDVNums can verify auxiliary-element DVs against this list.
+        self.globalDVNums = set(assembler.getGlobalDVIndices().tolist())
 
         # List of functions
         self.functionList = OrderedDict()
@@ -359,7 +367,70 @@ class TACSProblem(TACSSystem):
             rhsArray = Frhs.getArray()
             rhsArray[:] = rhsArray[:] + Fapplied[:]
 
-    def _addTractionToComponents(self, auxElems, compIDs, tractions, faceIndex=0):
+    def _setAssemblerAuxElemsAndDVs(self):
+        """
+        Attach this problem's auxiliary elements to the assembler and push the
+        current design variables into them.
+
+        The order of these two calls matters and should not be swapped:
+        ``TACSAssembler::setDesignVars`` only updates the auxiliary elements
+        that are attached to the assembler at the time it is called, so any
+        problem that sets its design variables before attaching its auxiliary
+        elements will leave stale load design variable values in those
+        elements. Problems that own more than one auxiliary element object
+        (see :meth:`_updateAuxElemDesignVars`) cannot use this helper.
+        """
+        self.assembler.setAuxElements(self.auxElems)
+        self.assembler.setDesignVars(self.x)
+
+    def _updateAuxElemDesignVars(self):
+        """
+        Push the current design variables into every auxiliary element owned by
+        this problem, whether or not it is attached to the assembler.
+
+        This is for problems such as :class:`~tacs.problems.TransientProblem`
+        that hold a separate auxiliary element object per time step and so
+        cannot rely on the single object attached to the assembler.
+        """
+        if self.auxElems is None:
+            return
+        if isinstance(self.auxElems, (list, tuple)):
+            auxElemList = self.auxElems
+        else:
+            auxElemList = [self.auxElems]
+        for auxElemObj in auxElemList:
+            auxElemObj.setDesignVars(self.x)
+
+    def _checkDVNums(self, dvNums):
+        """
+        Check that all design variable numbers passed to auxiliary elements are
+        valid global DV nums registered in pyTACS.addGlobalDV method before initialization.
+        Raises a TACSError if any DV number is not in the registered list.
+
+        Parameters
+        ----------
+        dvNums : numpy.ndarray
+            Array of global design variable numbers to validate. Negative entries are ignored.
+        """
+        if dvNums is not None:
+            dvNums = np.atleast_1d(dvNums).astype(np.intc)
+            active = dvNums[dvNums >= 0]
+            if active.size == 0:
+                return dvNums
+            # Check all dvs belong to the global dv nums
+            bad = active[np.isin(active, list(self.globalDVNums), invert=True)]
+            if bad.size > 0:
+                raise self._TACSError(
+                    "Design variable numbers {} were not added as global DVs. "
+                    "Global DV nums registered within the assembler: {}.".format(
+                        bad.tolist(), sorted(self.globalDVNums)
+                    )
+                )
+        return dvNums
+
+    def _addTractionToComponents(
+        self, auxElems, compIDs, tractions, faceIndex=0, tractionDVNums=None
+    ):
         """
         This is an internal helper function for doing the addTractionToComponents method for
         inherited TACSProblem classes. The function should NOT be called by the user should
@@ -382,6 +453,13 @@ class TACSProblem(TACSSystem):
         faceIndex : int
             Indicates which face (side) of the element to apply traction to.
             Note: not required for certain elements (i.e. shells)
+
+        tractionDVNums : numpy.ndarray or None
+            Optional 1d or 2d array of global design variable numbers controlling
+            each entry of the traction vector. Shape should be (tracLen,) for a
+            uniform assignment or (numElems, tracLen) for per-element assignment.
+            Use negative values for components that should not be treated as
+            design variables.
         """
         # Make sure compIDs is flat and unique
         compIDs = set(self._flatten(compIDs))
@@ -393,7 +471,12 @@ class TACSProblem(TACSSystem):
         )
         # Add tractions element by element
         self._addTractionToElements(
-            auxElems, elemIDs, tractions, faceIndex, nastranOrdering=False
+            auxElems,
+            elemIDs,
+            tractions,
+            faceIndex,
+            nastranOrdering=False,
+            tractionDVNums=tractionDVNums,
         )
 
         # Write out a message of what we did:
@@ -406,7 +489,13 @@ class TACSProblem(TACSSystem):
         )
 
     def _addTractionToElements(
-        self, auxElems, elemIDs, tractions, faceIndex=0, nastranOrdering=False
+        self,
+        auxElems,
+        elemIDs,
+        tractions,
+        faceIndex=0,
+        nastranOrdering=False,
+        tractionDVNums=None,
     ):
         """
         This is an internal helper function for doing the addTractionToElements method for
@@ -433,6 +522,13 @@ class TACSProblem(TACSSystem):
         nastranOrdering : bool
             Flag signaling whether elemIDs are in TACS (default)
             or NASTRAN ordering
+
+        tractionDVNums : numpy.ndarray or None
+            Optional 1d or 2d array of global design variable numbers controlling
+            each entry of the traction vector. Shape should be (tracLen,) for a
+            uniform assignment or (numElems, tracLen) for per-element assignment.
+            Use negative values for components that should not be treated as
+            design variables.
         """
 
         # Make sure the inputs are the correct shape
@@ -440,6 +536,7 @@ class TACSProblem(TACSSystem):
         tractions = np.atleast_2d(tractions).astype(dtype=self.dtype)
 
         numElems = len(elemIDs)
+        tracLen = tractions.shape[1]
 
         # If the user only specified one traction vector,
         # we assume the force should be the same for each element
@@ -454,6 +551,29 @@ class TACSProblem(TACSSystem):
                 )
             )
 
+        # Handle tractionDVNums broadcast (same shape semantics as tractions)
+        if tractionDVNums is None:
+            tractionDVNums = np.full((1, tracLen), -1, dtype=np.intc)
+        else:
+            tractionDVNums = np.atleast_2d(tractionDVNums).astype(np.intc)
+        if tractionDVNums.shape[0] == 1:
+            tractionDVNums = np.repeat(tractionDVNums, [numElems], axis=0)
+        elif tractionDVNums.shape[0] != numElems:
+            raise self._TACSError(
+                "Number of tractionDVNums rows must match number of elements,"
+                " {} rows were specified for {} element IDs".format(
+                    tractionDVNums.shape[0], numElems
+                )
+            )
+        if tractionDVNums.shape[1] != tracLen:
+            raise self._TACSError(
+                "Number of columns in tractionDVNums must match the number of traction components,"
+                " {} columns were specified for {} traction components".format(
+                    tractionDVNums.shape[1], tracLen
+                )
+            )
+        self._checkDVNums(tractionDVNums.ravel())
+
         # First find the corresponding local element ID on each processor
         localElemIDs = self.meshLoader.getLocalElementIDsFromGlobal(
             elemIDs, nastranOrdering=nastranOrdering
@@ -461,6 +581,9 @@ class TACSProblem(TACSSystem):
 
         # Flag to make sure we find all user-specified elements
         elemFound = np.zeros(numElems, dtype=int)
+        # Number of traction components each element expects, for the elements
+        # that were given fewer
+        numTracExpected = np.zeros(numElems, dtype=int)
 
         # Loop through every element and if it's owned by this processor, add the traction
         for i, elemID in enumerate(localElemIDs):
@@ -472,8 +595,16 @@ class TACSProblem(TACSSystem):
                 elemObj = self.meshLoader.getElementObjectForElemID(
                     elemIDs[i], nastranOrdering=nastranOrdering
                 )
+                # Pad a short traction with zero values that are not design variables
+                trac = tractions[i]
+                tracDVNums = np.ascontiguousarray(tractionDVNums[i])
+                numMissing = elemObj.getNumTractionComponents() - tracLen
+                if numMissing > 0:
+                    numTracExpected[i] = elemObj.getNumTractionComponents()
+                    trac = np.pad(trac, (0, numMissing))
+                    tracDVNums = np.pad(tracDVNums, (0, numMissing), constant_values=-1)
                 # Create an appropriate traction object for this element type
-                tracObj = elemObj.createElementTraction(faceIndex, tractions[i])
+                tracObj = elemObj.createElementTraction(faceIndex, trac, tracDVNums)
                 # Traction not implemented for this element
                 if tracObj is None:
                     self._TACSWarning(
@@ -503,7 +634,25 @@ class TACSProblem(TACSSystem):
                     "Double check BDF file.".format(elemIDs[i], orderString)
                 )
 
-    def _addPressureToComponents(self, auxElems, compIDs, pressures, faceIndex=0):
+        # Warn the user, once, if any tractions were shorter than their element expects
+        numTracExpected = np.max(self.comm.allgather(numTracExpected), axis=0)
+        numShort = np.count_nonzero(numTracExpected)
+        if numShort > 0:
+            self._TACSWarning(
+                "Tractions with {} components were added to {} elements that expect {} "
+                "components. The missing components were set to zero and are not "
+                "design variables.".format(
+                    tracLen,
+                    numShort,
+                    " or ".join(
+                        str(n) for n in np.unique(numTracExpected[numTracExpected > 0])
+                    ),
+                )
+            )
+
+    def _addPressureToComponents(
+        self, auxElems, compIDs, pressures, faceIndex=0, pressureDVNums=None
+    ):
         """
         This is an internal helper function for doing the addPressureToComponents method for
         inherited TACSProblem classes. The function should NOT be called by the user should
@@ -527,6 +676,10 @@ class TACSProblem(TACSSystem):
         faceIndex : int
             Indicates which face (side) of the element to apply pressure to.
             Note: not required for certain elements (i.e. shells)
+
+        pressureDVNums : int or array_like length 1 or elemIDs
+            Global design variable number(s) controlling the pressure magnitude for each element.
+            Use None if the pressure should not be a design variable.
         """
         # Make sure compIDs is flat and unique
         compIDs = set(self._flatten(compIDs))
@@ -538,7 +691,12 @@ class TACSProblem(TACSSystem):
         )
         # Add pressure element by element
         self._addPressureToElements(
-            auxElems, elemIDs, pressures, faceIndex, nastranOrdering=False
+            auxElems,
+            elemIDs,
+            pressures,
+            faceIndex,
+            nastranOrdering=False,
+            pressureDVNums=pressureDVNums,
         )
 
         # Write out a message of what we did:
@@ -551,7 +709,13 @@ class TACSProblem(TACSSystem):
         )
 
     def _addPressureToElements(
-        self, auxElems, elemIDs, pressures, faceIndex=0, nastranOrdering=False
+        self,
+        auxElems,
+        elemIDs,
+        pressures,
+        faceIndex=0,
+        nastranOrdering=False,
+        pressureDVNums=None,
     ):
         """
         This is an internal helper function for doing the addPressureToElements method for
@@ -578,11 +742,17 @@ class TACSProblem(TACSSystem):
         nastranOrdering : bool
             Flag signaling whether elemIDs are in TACS (default)
             or NASTRAN ordering
-        """
 
+        pressureDVNums : int or array_like length 1 or elemIDs
+            Global design variable number(s) controlling the pressure magnitude for each element.
+            Use None if the pressure should not be a design variable.
+        """
         # Make sure the inputs are the correct shape
         elemIDs = np.atleast_1d(elemIDs)
         pressures = np.atleast_1d(pressures)
+        pressureDVNums = np.atleast_1d(
+            -1 if pressureDVNums is None else pressureDVNums
+        ).astype(np.intc)
 
         numElems = len(elemIDs)
 
@@ -598,6 +768,20 @@ class TACSProblem(TACSSystem):
                     pressures.shape[0], numElems
                 )
             )
+
+        # Apply the same broadcast logic to DV nums as to pressures
+        if pressureDVNums.shape[0] == 1:
+            pressureDVNums = np.repeat(pressureDVNums, [numElems], axis=0)
+        elif pressureDVNums.shape[0] != numElems:
+            raise self._TACSError(
+                "Number of pressureDVNums must match number of elements,"
+                " {} DV nums were specified for {} element IDs".format(
+                    pressureDVNums.shape[0], numElems
+                )
+            )
+
+        # Validate all active (non-negative) DV nums
+        self._checkDVNums(pressureDVNums)
 
         # First find the corresponding local element ID on each processor
         localElemIDs = self.meshLoader.getLocalElementIDsFromGlobal(
@@ -617,7 +801,9 @@ class TACSProblem(TACSSystem):
                     elemIDs[i], nastranOrdering=nastranOrdering
                 )
                 # Create appropriate pressure object for this element type
-                pressObj = elemObj.createElementPressure(faceIndex, pressures[i])
+                pressObj = elemObj.createElementPressure(
+                    faceIndex, pressures[i], int(pressureDVNums[i])
+                )
                 # Pressure not implemented for element
                 if pressObj is None:
                     self._TACSWarning(
@@ -647,7 +833,50 @@ class TACSProblem(TACSSystem):
                     "Double check BDF file.".format(elemIDs[i], orderString)
                 )
 
-    def _addInertialLoad(self, auxElems, inertiaVector):
+    @staticmethod
+    def _resolveDeprecatedAccelVec(
+        accelVec: npt.ArrayLike | None, inertiaVector: npt.ArrayLike | None
+    ) -> npt.ArrayLike:
+        """
+        Resolve the deprecated ``inertiaVector`` keyword of ``addInertialLoad`` into ``accelVec``.
+
+        Parameters
+        ----------
+        accelVec : numpy.ndarray or None
+            Acceleration vector passed under the new name.
+        inertiaVector : numpy.ndarray or None
+            Acceleration vector passed under the deprecated name.
+
+        Returns
+        -------
+        numpy.ndarray
+            The acceleration vector to use.
+
+        Raises
+        ------
+        ValueError
+            If both ``accelVec`` and ``inertiaVector`` are given.
+        TypeError
+            If neither is given.
+        """
+        if inertiaVector is not None:
+            # Deprecated in v3.13, remove in v3.15
+            warnings.warn(
+                "The 'inertiaVector' argument of addInertialLoad is deprecated as of v3.13 and will be "
+                "removed in v3.15. Use 'accelVec' instead.",
+                DeprecationWarning,
+                stacklevel=3,
+            )
+            if accelVec is not None:
+                raise ValueError(
+                    "Cannot specify both 'accelVec' and deprecated 'inertiaVector' argument."
+                )
+            return inertiaVector
+        if accelVec is None:
+            raise TypeError("addInertialLoad() missing required argument: 'accelVec'")
+        return accelVec
+
+    def _addInertialLoad(self, auxElems, accelVec, accelVecDVNums=None):
         """
         This is an internal helper function for doing the addInertialLoad method for
         inherited TACSProblem classes. The function should NOT be called by the user should
@@ -660,23 +889,38 @@ class TACSProblem(TACSSystem):
          auxElems : tacs.TACS.AuxElements
             AuxElements object to add loads to.
 
-        inertiaVector : numpy.ndarray
+        accelVec : numpy.ndarray
             Acceleration vector used to define inertial load.
+
+        accelVecDVNums : numpy.ndarray or None
+            Optional array of global design variable numbers (length must match
+            accelVec) controlling each entry of the acceleration vector. Use negative values
+            for components that should not be treated as design variables.
         """
         # Make sure vector is right type
-        inertiaVector = np.atleast_1d(inertiaVector).astype(self.dtype)
+        accelVec = np.atleast_1d(accelVec).astype(self.dtype)
+        # Make sure design variable numbers are valid
+        accelVecDVNums = self._checkDVNums(accelVecDVNums)
         # Get elements on this processor
         localElements = self.assembler.getElements()
         # Loop through every element and apply inertial load
         for elemID, elemObj in enumerate(localElements):
             # Create appropriate inertial force object for this element type
-            inertiaObj = elemObj.createElementInertialForce(inertiaVector)
+            inertiaObj = elemObj.createElementInertialForce(accelVec, accelVecDVNums)
             # Inertial force is implemented for element
             if inertiaObj is not None:
                 # Add new inertial force to auxiliary element object
                 auxElems.addElement(elemID, inertiaObj)
 
-    def _addCentrifugalLoad(self, auxElems, omegaVector, rotCenter, firstOrder=False):
+    def _addCentrifugalLoad(
+        self,
+        auxElems,
+        omegaVector,
+        rotCenter,
+        firstOrder=False,
+        omegaDVNums=None,
+        rotCenterDVNums=None,
+    ):
         """
         This is an internal helper function for doing the addCentrifugalLoad method for
         inherited TACSProblem classes. The function should NOT be called by the user should
@@ -698,17 +942,34 @@ class TACSProblem(TACSSystem):
         firstOrder : bool, optional
             Whether to use first order approximation for centrifugal load,
             which computes the force in the displaced position. By default False
+
+        omegaDVNums : numpy.ndarray or None
+            Optional array of global design variable numbers (length must match
+            omegaVector) controlling each entry of the rotational velocity vector.
+            Use negative values for components that should not be treated as design variables.
+
+        rotCenterDVNums : numpy.ndarray or None
+            Optional array of global design variable numbers (length must match
+            rotCenter) controlling each entry of the rotation center.
+            Use negative values for components that should not be treated as design variables.
         """
         # Make sure vector is right type
         omegaVector = np.atleast_1d(omegaVector).astype(self.dtype)
         rotCenter = np.atleast_1d(rotCenter).astype(self.dtype)
+        # Make sure any dv nums are valid
+        omegaDVNums = self._checkDVNums(omegaDVNums)
+        rotCenterDVNums = self._checkDVNums(rotCenterDVNums)
         # Get elements on this processor
         localElements = self.assembler.getElements()
         # Loop through every element and apply centrifugal load
         for elemID, elemObj in enumerate(localElements):
             # Create appropriate centrifugal force object for this element type
             centrifugalObj = elemObj.createElementCentrifugalForce(
-                omegaVector, rotCenter, firstOrder=firstOrder
+                omegaVector,
+                rotCenter,
+                firstOrder=firstOrder,
+                omegaDVNums=omegaDVNums,
+                rotCenterDVNums=rotCenterDVNums,
             )
             # Centrifugal force is implemented for element
             if centrifugalObj is not None:
@@ -763,11 +1024,11 @@ class TACSProblem(TACSSystem):
 
             # Add any gravity loads
             elif loadInfo.type == "GRAV":
-                inertiaVec = np.zeros(3, dtype=self.dtype)
-                inertiaVec[:3] = scale * loadInfo.scale * loadInfo.N
+                accelVec = np.zeros(3, dtype=self.dtype)
+                accelVec[:3] = scale * loadInfo.scale * loadInfo.N
                 # Convert acceleration to global coordinate system
-                inertiaVec = loadInfo.cid_ref.transform_vector_to_global(inertiaVec)
-                self._addInertialLoad(auxElems, inertiaVec)
+                accelVec = loadInfo.cid_ref.transform_vector_to_global(accelVec)
+                self._addInertialLoad(auxElems, accelVec)
 
             # Add any centrifugal loads
             elif loadInfo.type == "RFORCE":

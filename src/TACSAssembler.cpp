@@ -18,6 +18,8 @@
 
 #include "TACSAssembler.h"
 
+#include <algorithm>
+
 #include "TACSElementVerification.h"
 #include "TacsUtilities.h"
 
@@ -160,6 +162,8 @@ TACSAssembler::TACSAssembler(MPI_Comm _tacs_comm, int _varsPerNode,
   designNodeMap = NULL;
   designExtDist = NULL;
   designDepNodes = NULL;
+  numGlobalDVs = 0;
+  globalDVNums = NULL;
 
   // Set the local element data to NULL
   elementData = NULL;
@@ -280,6 +284,9 @@ TACSAssembler::~TACSAssembler() {
   }
   if (elementSensIData) {
     delete[] elementSensIData;
+  }
+  if (globalDVNums) {
+    delete[] globalDVNums;
   }
 
   // Delete initial condition vectors
@@ -972,6 +979,7 @@ void TACSAssembler::setAuxElements(TACSAuxElements *auxElems) {
     auxElements->decref();
   }
   auxElements = auxElems;
+  bool maxDVsUpdated = false;
 
   // Check whether the auxiliary elements match
   if (auxElements) {
@@ -987,6 +995,23 @@ void TACSAssembler::setAuxElements(TACSAuxElements *auxElems) {
                  aux[k].elem->getNumVariables()) {
         fprintf(stderr, "[%d] Auxiliary element sizes do not match\n", mpiRank);
       }
+
+      // Update the maximum number of element design variables
+      int numDVs = aux[k].elem->getDesignVarNums(aux[k].num, 0, NULL);
+      if (numDVs > maxElementDesignVars) {
+        maxElementDesignVars = numDVs;
+        maxDVsUpdated = true;
+      }
+    }
+
+    // If the buffers have already been allocated and the new max exceeds their
+    // current size, reallocate them so downstream code doesn't overflow.
+    if (maxDVsUpdated && elementSensData && elementSensIData) {
+      delete[] elementSensData;
+      delete[] elementSensIData;
+      elementSensData =
+          new TacsScalar[designVarsPerNode * maxElementDesignVars];
+      elementSensIData = new int[maxElementDesignVars];
     }
   }
 }
@@ -2617,8 +2642,17 @@ int TACSAssembler::initialize() {
 
   // Create the design variable node mapping
   if (!designNodeMap) {
-    // Get the number of design variables
+    // Get the number of design variables from element scan
     int numDVs = getNumDesignVars();
+
+    // Extend to cover any global DV indices not referenced by regular elements
+    // (e.g. DVs that will only be used by aux elements added after
+    // initialize())
+    for (int i = 0; i < numGlobalDVs; i++) {
+      if (globalDVNums[i] + 1 > numDVs) {
+        numDVs = globalDVNums[i] + 1;
+      }
+    }
 
     if (mpiRank > 0) {
       numDVs = 0;
@@ -2672,6 +2706,13 @@ int TACSAssembler::initialize() {
       }
     }
 
+    // Count Python-level global DV indices not locally owned
+    for (int i = 0; i < numGlobalDVs; i++) {
+      if (globalDVNums[i] < lower || globalDVNums[i] >= upper) {
+        dvLen++;
+      }
+    }
+
     // Allocate space for absolutely everything!
     int *allDVs = new int[dvLen];
 
@@ -2708,6 +2749,14 @@ int TACSAssembler::initialize() {
           allDVs[dvLen] = dep_conn[j];
           dvLen++;
         }
+      }
+    }
+
+    // Add any global DV indices not locally owned
+    for (int i = 0; i < numGlobalDVs; i++) {
+      if (globalDVNums[i] < lower || globalDVNums[i] >= upper) {
+        allDVs[dvLen] = globalDVNums[i];
+        dvLen++;
       }
     }
 
@@ -3063,6 +3112,45 @@ void TACSAssembler::setDesignNodeMap(int _designVarsPerNode,
 }
 
 /**
+  Store the global DV indices that must be distributed to all procs.
+
+  These indices are appended to the external DV distribution during
+  initialize(), ensuring that aux elements added after initialize() can
+  always access them via dvs->getValues().
+
+  @param n Number of global DV indices
+  @param dvNums Array of global DV indices (length n)
+*/
+void TACSAssembler::setGlobalDVIndices(int n, const int *dvNums) {
+  if (meshInitializedFlag) {
+    fprintf(stderr,
+            "[%d] Cannot call setGlobalDVIndices() after initialize()\n",
+            mpiRank);
+    return;
+  }
+  delete[] globalDVNums;
+  numGlobalDVs = n;
+  globalDVNums = new int[n];
+  std::copy_n(dvNums, n, globalDVNums);
+}
+
+/**
+  Retrieve the global DV indices previously registered via setGlobalDVIndices().
+
+  Sets *dvNums to point to the internal array (do not free or modify).
+
+  @param dvNums Output pointer to the internal array of global DV indices
+  @return The number of global DV indices (same as n passed to
+  setGlobalDVIndices)
+*/
+int TACSAssembler::getGlobalDVIndices(const int **dvNums) {
+  if (dvNums) {
+    *dvNums = globalDVNums;
+  }
+  return numGlobalDVs;
+}
+
+/**
   Set the dependent design variable information
 
   @param numDepDesignVars The number of dependent design variables
@@ -3244,25 +3332,28 @@ void TACSAssembler::setDesignVars(TACSBVec *dvs) {
   dvs->beginDistributeValues();
   dvs->endDistributeValues();
 
-  // Get the design variables from the elements on this process
+  // Set the design variables in the auxiliary elements. The values were
+  // distributed above, so this does not distribute them again. Do not call
+  // auxElements->setDesignVars here: it is collective, and ranks without an
+  // auxiliary element object would skip it.
+  if (auxElements) {
+    auxElements->setDistributedDesignVars(dvs);
+  }
+
+  // Set the design variables in the elements on this process
   const int maxDVs = maxElementDesignVars;
   TacsScalar *dvVals = elementSensData;
   int *dvNums = elementSensIData;
-
-  // Get the design variables from the auxiliary elements
-  if (auxElements) {
-    TACSAuxElem *aux = NULL;
-    int naux = auxElements->getAuxElements(&aux);
-    for (int i = 0; i < naux; i++) {
-      int numDVs = aux[i].elem->getDesignVarNums(aux[i].num, maxDVs, dvNums);
-      dvs->getValues(numDVs, dvNums, dvVals);
-      aux[i].elem->setDesignVars(aux[i].num, maxDVs, dvVals);
-    }
-  }
-
   for (int i = 0; i < numElements; i++) {
     int numDVs = elements[i]->getDesignVarNums(i, maxDVs, dvNums);
-    dvs->getValues(numDVs, dvNums, dvVals);
+    const int fail = dvs->getValues(numDVs, dvNums, dvVals);
+    if (fail != 0) {
+      fprintf(stderr,
+              "[%d] Element %d uses a design variable that is not in the "
+              "external design variable list of this rank\n",
+              mpiRank, i);
+      continue;
+    }
     elements[i]->setDesignVars(i, numDVs, dvVals);
   }
 }

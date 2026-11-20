@@ -14,12 +14,20 @@
 
 #include "TACSMassInertialForce.h"
 
+#include <algorithm>
+
 TACSMassInertialForce::TACSMassInertialForce(TACSGeneralMassConstitutive *_con,
-                                             const TacsScalar _inertiaVec[]) {
+                                             const TacsScalar _accelVec[],
+                                             const int *_accelVecDVNums) {
   con = _con;
   con->incref();
-  memset(inertiaVec, 0, NUM_DISPS * sizeof(TacsScalar));
-  memcpy(inertiaVec, _inertiaVec, 3 * sizeof(TacsScalar));
+  memset(accelVec, 0, NUM_DISPS * sizeof(TacsScalar));
+  std::copy_n(_accelVec, 3, accelVec);
+  if (_accelVecDVNums) {
+    std::copy_n(_accelVecDVNums, 3, accelVecDVNums);
+  } else {
+    accelVecDVNums[0] = accelVecDVNums[1] = accelVecDVNums[2] = -1;
+  }
 }
 
 TACSMassInertialForce::~TACSMassInertialForce() { con->decref(); }
@@ -43,7 +51,7 @@ void TACSMassInertialForce::addResidual(
     const TacsScalar *dvars, const TacsScalar *ddvars, TacsScalar *res) {
   TacsScalar f[NUM_DISPS];
   double pt[3] = {0.0, 0.0, 0.0};
-  con->evalInertia(elemIndex, pt, Xpts, inertiaVec, f);
+  con->evalInertia(elemIndex, pt, Xpts, accelVec, f);
   for (int i = 0; i < NUM_DISPS; i++) {
     res[i] -= f[i];
   }
@@ -67,7 +75,27 @@ void TACSMassInertialForce::addAdjResProduct(
     const TacsScalar Xpts[], const TacsScalar vars[], const TacsScalar dvars[],
     const TacsScalar ddvars[], int dvLen, TacsScalar dfdx[]) {
   double pt[3] = {0.0, 0.0, 0.0};
-  // Add the product of the derivative of the inertial force
-  con->addInertiaDVSens(elemIndex, -scale, pt, Xpts, inertiaVec, psi, dvLen,
+  // Add the product of the derivative of the inertial force w.r.t. constitutive
+  // DVs
+  con->addInertiaDVSens(elemIndex, -scale, pt, Xpts, accelVec, psi, dvLen,
                         dfdx);
+
+  // We need to find out how many dvs are associated with the constitutive class
+  // and append any inertia dvs after those
+  int index = con->getDesignVarNums(elemIndex, dvLen, NULL);
+
+  // Add sensitivity w.r.t. acceleration vector DVs.
+  // res[i] -= f[i] where f = M * accelVec, so d(res)/d(accelVec[j]) =
+  // -M[:,j]. The adjoint product is: -scale * psi^T * M[:,j] = -scale * (M *
+  // psi)[j], which equals -scale * evalInertia(psi)[j] by symmetry of M.
+  TacsScalar Mpsi[NUM_DISPS];
+  con->evalInertia(elemIndex, pt, Xpts, psi, Mpsi);
+  for (int i = 0; i < 3; i++) {
+    if (accelVecDVNums[i] >= 0) {
+      if (index < dvLen) {
+        dfdx[index] += -scale * Mpsi[i];
+      }
+      index++;
+    }
+  }
 }

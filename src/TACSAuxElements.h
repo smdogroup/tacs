@@ -23,6 +23,7 @@
   TACSAuxElements implementation
 */
 
+#include "TACSBVec.h"
 #include "TACSElement.h"
 #include "TACSObject.h"
 
@@ -70,11 +71,9 @@ class TACSAuxElements : public TACSObject {
   // --------------------------------------------------------
   int getAuxElements(TACSAuxElem **elems);
 
-  // Functions to control the design variables
-  // -----------------------------------------
-  void getDesignVars(int numDVs, TacsScalar dvs[]);
-  void setDesignVars(int numDVs, const TacsScalar dvs[]);
-  void getDesignVarRange(int numDVs, TacsScalar lb[], TacsScalar ub[]);
+  // Set the design variables in all auxiliary elements from a design vector
+  // ----------------------------------------------------------------------
+  void setDesignVars(TACSBVec *dvs);
 
   // Print the name of the TACSObject
   // --------------------------------
@@ -93,6 +92,14 @@ class TACSAuxElements : public TACSObject {
 
   // The auxiliary elements
   TACSAuxElem *aux;
+
+  // Set the design variables from a design vector whose non-local values have
+  // already been distributed. TACSAssembler::setDesignVars calls this after its
+  // own distribution, so that it does not distribute the vector twice. It must
+  // not be collective, because the assembler only calls it on ranks that have
+  // an auxiliary element object attached.
+  void setDistributedDesignVars(TACSBVec *dvs);
+  friend class TACSAssembler;
 
   // The auxiliary object name
   static const char *auxName;

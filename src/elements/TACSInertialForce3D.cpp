@@ -14,18 +14,26 @@
 
 #include "TACSInertialForce3D.h"
 
+#include <algorithm>
+
 #include "TACSElementAlgebra.h"
 
 TACSInertialForce3D::TACSInertialForce3D(int _varsPerNode,
                                          TACSConstitutive *_con,
                                          TACSElementBasis *_basis,
-                                         const TacsScalar _inertiaVec[]) {
+                                         const TacsScalar _accelVec[],
+                                         const int *_accelVecDVNums) {
   varsPerNode = _varsPerNode;
   con = _con;
   con->incref();
   basis = _basis;
   basis->incref();
-  memcpy(inertiaVec, _inertiaVec, 3 * sizeof(TacsScalar));
+  std::copy_n(_accelVec, 3, accelVec);
+  if (_accelVecDVNums) {
+    std::copy_n(_accelVecDVNums, 3, accelVecDVNums);
+  } else {
+    accelVecDVNums[0] = accelVecDVNums[1] = accelVecDVNums[2] = -1;
+  }
 }
 
 TACSInertialForce3D::~TACSInertialForce3D() {
@@ -75,22 +83,59 @@ double TACSInertialForce3D::getFaceQuadraturePoint(int face, int n, double pt[],
 
 int TACSInertialForce3D::getDesignVarNums(int elemIndex, int dvLen,
                                           int dvNums[]) {
-  return con->getDesignVarNums(elemIndex, dvLen, dvNums);
+  int num = con->getDesignVarNums(elemIndex, dvLen, dvNums);
+  for (int i = 0; i < 3; i++) {
+    if (accelVecDVNums[i] >= 0) {
+      if (dvNums && num < dvLen) {
+        dvNums[num] = accelVecDVNums[i];
+      }
+      num++;
+    }
+  }
+  return num;
 }
 
 int TACSInertialForce3D::setDesignVars(int elemIndex, int dvLen,
                                        const TacsScalar dvs[]) {
-  return con->setDesignVars(elemIndex, dvLen, dvs);
+  int num = con->setDesignVars(elemIndex, dvLen, dvs);
+  for (int i = 0; i < 3; i++) {
+    if (accelVecDVNums[i] >= 0) {
+      if (num < dvLen) {
+        accelVec[i] = dvs[num];
+      }
+      num++;
+    }
+  }
+  return num;
 }
 
 int TACSInertialForce3D::getDesignVars(int elemIndex, int dvLen,
                                        TacsScalar dvs[]) {
-  return con->getDesignVars(elemIndex, dvLen, dvs);
+  int num = con->getDesignVars(elemIndex, dvLen, dvs);
+  for (int i = 0; i < 3; i++) {
+    if (accelVecDVNums[i] >= 0) {
+      if (dvs && num < dvLen) {
+        dvs[num] = accelVec[i];
+      }
+      num++;
+    }
+  }
+  return num;
 }
 
 int TACSInertialForce3D::getDesignVarRange(int elemIndex, int dvLen,
                                            TacsScalar lb[], TacsScalar ub[]) {
-  return con->getDesignVarRange(elemIndex, dvLen, lb, ub);
+  int num = con->getDesignVarRange(elemIndex, dvLen, lb, ub);
+  for (int i = 0; i < 3; i++) {
+    if (accelVecDVNums[i] >= 0) {
+      if (num < dvLen) {
+        lb[num] = -TACS_LARGE_DV_BOUND;
+        ub[num] = TACS_LARGE_DV_BOUND;
+      }
+      num++;
+    }
+  }
+  return num;
 }
 
 /*
@@ -126,7 +171,7 @@ void TACSInertialForce3D::addResidual(
     TacsScalar density = con->evalDensity(elemIndex, pt, X);
 
     for (int k = 0; k < 3; k++) {
-      DUt[3 * k] = -density * inertiaVec[k];
+      DUt[3 * k] = -density * accelVec[k];
     }
 
     // Add the weak form of the residual at this point
@@ -171,7 +216,7 @@ void TACSInertialForce3D::addJacobian(int elemIndex, double time,
     TacsScalar density = con->evalDensity(elemIndex, pt, X);
 
     for (int k = 0; k < 3; k++) {
-      DUt[3 * k] = -density * inertiaVec[k];
+      DUt[3 * k] = -density * accelVec[k];
     }
 
     // Add the weak form of the residual at this point
